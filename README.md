@@ -33,13 +33,13 @@ A plataforma foi desenhada seguindo os mais rigorosos padrões arquiteturais cor
 O projeto está sendo construído de forma modular e incremental, dividido em fases estratégicas:
 
 ### Fase 0: Infraestrutura de IA Local (Ollama)
-- [ ] Instalação e configuração do servidor Ollama no ambiente de desenvolvimento.
-- [ ] Testes de *benchmarking* e seleção do modelo de linguagem (LLM) ideal para o projeto.
+- [x] Instalação e configuração do servidor Ollama no ambiente de desenvolvimento.
+- [x] Testes de *benchmarking* e seleção do modelo de linguagem (LLM) ideal para o projeto (Llama 3.1).
 
 ### Fase 1: Fundação do Motor & Interface Chat
-- [ ] Criação do layout base em Angular utilizando Standalone Components e submissão reativa de inputs.
-- [ ] Estruturação da API em .NET 10 com suporte a WebAPI RESTful padrão.
-- [ ] Integração do backend em C# com a API REST local do Ollama.
+- [x] Criação do layout base em Angular utilizando Standalone Components e submissão reativa de inputs.
+- [x] Estruturação da API em .NET 10 com suporte a WebAPI RESTful padrão.
+- [x] Integração do backend em C# (Semantic Kernel) com a API REST local do Ollama (Blindagem com Temp 0).
 
 ### Fase 2: Streaming de Dados & Experiência Fluida
 - [ ] Refatoração da comunicação para WebSockets (ASP.NET Core SignalR) para fornecer streaming de texto caractere por caractere no frontend.
