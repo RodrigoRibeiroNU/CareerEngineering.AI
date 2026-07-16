@@ -1,14 +1,32 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, PLATFORM_ID, APP_INITIALIZER, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
-
 import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
+import { provideAuth0 } from '@auth0/auth0-angular';
+import { isPlatformBrowser } from '@angular/common';
+
+export function authInitializer(platformId: Object) {
+  return () => {
+    if (isPlatformBrowser(platformId)) {
+      // Aqui você coloca a lógica de inicialização do Auth0
+    }
+  };
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(),
-    provideRouter(routes), provideClientHydration()
+    provideRouter(routes), provideClientHydration(),
+    provideAuth0({
+      domain: 'dev-41nhlxtdpvk10ged.us.auth0.com',
+      clientId: 'E6M23rVZb8kKlt3GwHjaDB6bOB3pa0O5',
+      authorizationParams: {
+        redirect_uri: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4200',
+        audience: 'https://careerengineering-api.com',
+        scope: 'openid profile email'
+      }
+    })
   ]
 };

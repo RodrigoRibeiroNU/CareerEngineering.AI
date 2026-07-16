@@ -1,8 +1,10 @@
+import { AuthService } from '@auth0/auth0-angular';
 import { Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { CareerMentorService } from './services/career-mentor';
 import { SignalRService } from './services/signal-r';
 import { effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -12,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 export class App {
   private readonly careerMentor = inject(CareerMentorService);
   private readonly signalRService = inject(SignalRService);
+  public auth = inject(AuthService);
 
   private readonly scrollContainer = viewChild<ElementRef<HTMLDivElement>>('scrollContainer');
   
@@ -47,10 +50,16 @@ export class App {
     }, 10);
   }
 
-  protected analyze(): void {
-    if (!this.canSubmit() || this.loading()) {
+  protected async analyze(): Promise<void> {
+    if (!this.canSubmit() || this.loading()) return;
+
+    const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
+    if (!isAuthenticated) {
+      this.auth.loginWithRedirect(); // Redireciona para o Auth0 se não estiver logado
       return;
     }
+
+    await this.signalRService.connect();
 
     this.loading.set(true);
     this.error.set(null);

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace CareerEngineering.Api.Hubs;
 
+[Authorize]
 public class CareerChatHub : Hub
 {
     private readonly Kernel _kernel;
@@ -16,6 +18,8 @@ public class CareerChatHub : Hub
 
     public async Task StartAnalysis(string jobDescription, string resumeText)
     {
+        var userId = Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
         var chatService = _kernel.GetRequiredService<IChatCompletionService>();
         
         // 🔥 FASE 3: O System Prompt Profissional

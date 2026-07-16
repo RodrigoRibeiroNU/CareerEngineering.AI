@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.SemanticKernel;
 using Scalar.AspNetCore;
 using CareerEngineering.Api.Hubs;
@@ -6,11 +7,30 @@ using CareerEngineering.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var auth0Domain = builder.Configuration["Auth0:Domain"]!;
+var auth0Audience = builder.Configuration["Auth0:Audience"]!;
+
 // ==========================================
 // 1. CONFIGURAÇÃO DE SERVIÇOS (DI Container)
 // ==========================================
 
-// APIs Rest e Documentação
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = auth0Domain;
+        options.Audience = auth0Audience;
+
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Auth0:Audience"], // O seu identifier
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Auth0:Domain"]
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi(); 
 
@@ -45,6 +65,10 @@ builder.Services.AddSingleton<Kernel>(sp =>
 
 var app = builder.Build();
 
+app.UseCors("AllowAngular");
+app.UseAuthentication(); 
+app.UseAuthorization();
+
 // Configura a interface visual do Scalar no ambiente de desenvolvimento
 if (app.Environment.IsDevelopment())
 {
@@ -53,7 +77,6 @@ if (app.Environment.IsDevelopment())
 }
 
 // Aplicação de Middlewares (A ordem importa!)
-app.UseCors("AllowAngular");
 app.UseAuthorization();
 
 // Mapeamento de Endpoints e Hubs
