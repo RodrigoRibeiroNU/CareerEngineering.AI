@@ -1,0 +1,18 @@
+<section class="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl h-full min-h-0">
+    <div class="flex-shrink-0">
+      <h2 class="text-lg font-semibold text-slate-100">Tecnologias em falta</h2>
+      <p class="mt-1 text-sm text-slate-400">Resultado baseado exclusivamente nos textos enviados.</p>
+    </div>
+  
+    <div #scrollContainer class="mt-5 flex-1 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-4 min-h-0">
+      @if (loading() && !result()) {
+        <p class="text-sm text-blue-300 animate-pulse">{{ statusText() }}</p>
+      } @else if (result()) {
+        <pre class="whitespace-pre-wrap text-sm leading-relaxed text-slate-200 font-sans">{{ result() }}</pre>
+      } @else {
+        <p class="text-sm text-slate-500">
+          Preencha a vaga e o currículo à esquerda, depois clique em <span class="text-emerald-400 font-medium">Analisar gap</span>.
+        </p>
+      }
+    </div>
+  </section>
