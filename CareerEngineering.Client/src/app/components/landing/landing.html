@@ -1,0 +1,82 @@
+<div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative overflow-hidden">
+  
+    <!-- Detalhe decorativo de fundo (Glow sutil) -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[300px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+  
+    <!-- Header minimalista -->
+    <header class="border-b border-slate-900/80 bg-slate-950/50 backdrop-blur-md px-4 py-4 sm:px-6 lg:px-8 z-10 flex-shrink-0">
+      <div class="mx-auto max-w-7xl flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center font-bold text-slate-950 text-lg">C</div>
+          <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-100 to-slate-400 bg-clip-text text-transparent">
+            CareerEngineering.AI
+          </span>
+        </div>
+        <button 
+          (click)="login()" 
+          class="text-sm font-semibold px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer text-slate-300 hover:text-white">
+          Entrar
+        </button>
+      </div>
+    </header>
+  
+    <!-- Hero Section principal -->
+    <main class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8 flex-1 flex flex-col justify-center items-center text-center z-10">
+      
+      <div class="max-w-3xl space-y-6">
+        
+        <!-- Tag informativa -->
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          Análise de Gap com IA Local
+        </span>
+  
+        <!-- Título principal -->
+        <h2 class="text-4xl sm:text-5xl font-black tracking-tight leading-[1.15] text-slate-100">
+          Seu currículo alinhado com o mercado através de <span class="bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent">Inteligência Artificial</span>
+        </h2>
+  
+        <!-- Subtítulo -->
+        <p class="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          Descubra os gaps técnicos exatos entre o seu perfil profissional e a vaga dos seus sonhos. Otimize sua apresentação e conquiste as melhores oportunidades.
+        </p>
+  
+        <!-- Botão CTA (Call to Action) principal -->
+        <div class="pt-6">
+          <button 
+            (click)="login()"
+            class="h-14 px-8 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-lg shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_35px_rgba(16,185,129,0.3)] transition-all cursor-pointer inline-flex items-center gap-3">
+            Analisar meu currículo gratuitamente
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </button>
+        </div>
+  
+      </div>
+  
+      <!-- Seção de Recursos (Cards explicando como funciona de forma resumida) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mt-20">
+        
+        <div class="p-6 rounded-2xl border border-slate-900 bg-slate-900/20 backdrop-blur-sm hover:border-slate-800 transition-colors text-left space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 font-bold">1</div>
+          <h3 class="text-md font-semibold text-slate-200">Defina a vaga</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Cole os requisitos da oportunidade que deseja conquistar.</p>
+        </div>
+  
+        <div class="p-6 rounded-2xl border border-slate-900 bg-slate-900/20 backdrop-blur-sm hover:border-slate-800 transition-colors text-left space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 font-bold">2</div>
+          <h3 class="text-md font-semibold text-slate-200">Envie o seu currículo</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Insira o texto completo do seu histórico profissional atual.</p>
+        </div>
+  
+        <div class="p-6 rounded-2xl border border-slate-900 bg-slate-900/20 backdrop-blur-sm hover:border-slate-800 transition-colors text-left space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 font-bold">3</div>
+          <h3 class="text-md font-semibold text-slate-200">Analise os Gaps em tempo real</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Nossa inteligência artificial analisa e exibe em streaming quais tecnologias faltam no seu perfil.</p>
+        </div>
+  
+      </div>
+  
+    </main>
+  </div>

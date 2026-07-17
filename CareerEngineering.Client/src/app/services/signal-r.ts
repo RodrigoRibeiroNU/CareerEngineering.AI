@@ -32,12 +32,12 @@ export class SignalRService {
     await this.hubConnection.start();
   }
 
-  public sendAnalysisRequest(job: string, resume: string) {
+  public sendAnalysisRequest(job: string, resume: string, userName: string, userEmail: string): void {
     this.streamMessage.set('');
     
-    // Verificação de segurança: ?. verifica se existe antes de acessar
+    // Mantemos sua excelente verificação de segurança original!
     if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
-      this.hubConnection.invoke('StartAnalysis', job, resume)
+      this.hubConnection.invoke('StartAnalysis', job, resume, userName, userEmail)
         .catch(err => console.error('Erro ao invocar StartAnalysis:', err));
     } else {
       console.warn('Conexão SignalR não está ativa. Status:', this.hubConnection?.state);
