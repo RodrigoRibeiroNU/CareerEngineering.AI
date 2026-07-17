@@ -1,100 +1,91 @@
 # 🚀 CareerEngineering.AI
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-blueviolet.svg)](https://dotnet.microsoft.com/)
-[![Angular](https://img.shields.io/badge/Angular-18+-red.svg)](https://angular.dev/)
+[![Angular](https://img.shields.io/badge/Angular-22.0-red.svg)](https://angular.dev/)
 [![Ollama](https://img.shields.io/badge/Ollama-Local_AI-black.svg?logo=ollama)](https://ollama.com/)
-[![AI-Powered](https://img.shields.io/badge/AI--Powered-Semantic%20Kernel-blue.svg)](https://learn.microsoft.com/en-us/semantic-kernel/)
+[![Semantic Kernel](https://img.shields.io/badge/AI--Powered-Semantic%20Kernel-blue.svg)](https://learn.microsoft.com/en-us/semantic-kernel/)
+[![Auth0](https://img.shields.io/badge/Auth-Auth0-orange.svg)](https://auth0.com/)
 
-O **CareerEngineering.AI** é uma plataforma inteligente e assistente conversacional de alta performance projetado para atuar como um mentor especialista em carreiras e posicionamento de mercado para profissionais de TI. O sistema analisa competências, objetivos de senioridade e pretensões salariais para desenhar rotas de estudos personalizadas e estratégias de marketing pessoal.
+O **CareerEngineering.AI** é um ecossistema inteligente de alta performance projetado para realizar análise automatizada e minuciosa de aderência profissional (Gap Analysis). O sistema confronta os requisitos técnicos de uma vaga de TI contra o perfil de um candidato, mapeando de forma precisa lacunas de competências divididas em Ferramentas, Metodologias e Certificações.
 
-**Diferencial Arquitetural:** O núcleo de Inteligência Artificial é alimentado por modelos de linguagem *Open-Source* rodando **100% localmente via Ollama**, garantindo privacidade total dos dados dos usuários e custo zero de inferência de tokens.
-
----
-
-## 🏗️ Arquitetura do Sistema e Engenharia
-
-A plataforma foi desenhada seguindo os mais rigorosos padrões arquiteturais corporativos, focando no desacoplamento entre o motor de interface do usuário, as regras de negócio e os serviços de orquestração de Inteligência Artificial.
-
-### 🖥️ Backend Principal (.NET 10 & SignalR)
-* **Orquestração GenAI Local (Ollama):** Integração com o servidor local do Ollama utilizando o SDK oficial da Microsoft (Semantic Kernel), consumindo modelos de alta precisão cognitiva de forma transparente.
-* **Engenharia de Prompt em Duplo Estágio (Generator-Refiner):** Arquitetura que divide a carga de trabalho em duas etapas: um extrator de dados frio focado na validação rígida de dados e um refinador consultivo responsável pela formatação final da mentoria.
-* **Filtros Decisórios Interceptadores:** Camada lógica desenvolvida em C# que analisa os tokens do streaming em tempo real, aplicando travas de segurança (*CancellationToken* com Timeout) e guilhotinas sintáticas para barrar alucinações de layout ou redundâncias do modelo.
-* **Comunicação em Tempo Real:** Uso do ASP.NET Core SignalR para streaming assíncrono de tokens caractere por caractere, minimizando a percepção de latência do modelo local.
-
-### 🎨 Frontend Reativo (Angular & RxJS)
-* **Modern Reactivity (Angular Signals):** Controle fino e reativo de estados de carregamento (*"Conectando ao mentor..."*), interações do usuário e gatilhos visuais da interface sem sobrecarga de renderização.
-* **Efeito Streaming (RxJS + SignalR Client):** Motor de processamento projetado para ler os fluxos de dados enviados pelo backend em tempo real, gerando a experiência visual fluida de digitação na tela.
-* **Layout Adaptativo Resiliente:** View com dimensionamento otimizado (ex: `h-[72vh]`) configurada para evitar quebras visuais e rolagens involuntárias durante respostas extensas de análises de perfil.
+**Diferencial Arquitetural:** O motor de inteligência opera em duplo estágio por meio de modelos *Open-Source* rodando **100% localmente via Ollama**, garantindo privacidade total dos dados sensíveis do currículo e custo zero de inferência. A entrega do resultado é feita em tempo real através de uma arquitetura orientada a eventos e streaming de tokens.
 
 ---
 
-## 🖥️ Especificações de Hardware para Execução Local
+## 🏗️ Arquitetura e Engenharia de Software Realizada
 
-Este projeto foi desenhado como um estudo de capacidade técnica para rodar LLMs (Large Language Models) de forma 100% local. Devido à escala do modelo de linguagem homologado, a arquitetura exige o compartilhamento estratégico de recursos entre CPU, GPU e memória RAM.
+O sistema está estruturado em um modelo desacoplado, utilizando tecnologias modernas de comunicação assíncrona, resistência relacional e controle rigoroso de ciclo de vida de tokens de IA.
 
-### Requisitos Mínimos (Homologado: Qwen 2.5 14B Instruct Q4_K_M)
-* **Processador (CPU):** AMD Ryzen 5 3600X / Intel Core i5 (9ª geração) ou superior.
-* **Memória RAM:** 32 GB DDR4 (Mínimo de 3000 MHz recomendado para evitar gargalos de barramento durante o transbordo).
-* **Placa de Vídeo (GPU):** NVIDIA GeForce GTX 1060 6GB (ou qualquer GPU com suporte a CUDA e mínimo de 6GB VRAM).
-* **Armazenamento:** Mínimo de 15 GB livres em SSD (A execução em HDD torna a latência de leitura inicial inviável).
+### 🖥️ Backend (.NET 10 & SignalR)
+* **Orquestração GenAI Local (Semantic Kernel):** Consumo do modelo local via SDK oficial da Microsoft, permitindo isolamento de prompts e controle fino de hiperparâmetros.
+* **Pipeline de Engenharia de Prompt em Duplo Estágio (Generator-Refiner):** 1. **Estágio 1 (Extrator Bruto):** Avaliação analítica fria a nível de dicionário. Se o input do currículo for completamente desalinhado com a vaga, o pipeline dispara um gatilho de saída antecipada (`DIVERGENTE`), poupando hardware.
+  2. **Estágio 2 (Refinador Consultivo):** Transforma a lista seca em um feedback amigável estruturado rigidamente em 3 seções Markdown.
+* **Filtros Defensivos & Guilhotina de Tokens:** Implementação no `CareerChatHub.cs` utilizando penalidades de presença/frequência (`PresencePenalty`/`FrequencyPenalty`) e uma trava lógica via C# que monitora o stream e corta a conexão imediatamente após a seção de Certificações, eliminando repetições ou saudações redundantes do modelo.
+* **Resiliência de Hardware:** Controle de timeout assíncrono limitando a requisição do primeiro estágio a **45 segundos** via `CancellationToken`, evitando travamentos por estrangulamento de memória RAM/VRAM.
+* **Streaming por WebSockets:** Centralização do fluxo produtivo no Hub SignalR (`/careerChatHub`), transmitindo pedaços de texto em tempo real com suporte a credenciais e CORS restrito a ambiente local seguro (`http://localhost:4200`).
+* **Persistência de Auditoria (Write-Only):** Conclusão do stream dispara o salvamento em banco relacional (SQL Server) através do Entity Framework Core, registrando a entidade `Usuario` e a respectiva `Analise` vinculada (ignorado no caso de saída por divergência).
+* **Documentação de API:** Configuração nativa de OpenAPI utilizando a interface moderna do **Scalar** disponível em ambiente de desenvolvimento.
 
-> **Nota de Arquitetura:** O modelo de 14B (~9.2 GB em disco) excede os 6GB de VRAM físicos da placa de vídeo de desenvolvimento. O ecossistema realiza o transbordo (*offloading*) dos parâmetros excedentes para a memória RAM. Como consequência, a taxa de geração (*Tokens por Segundo*) opera sob restrição de velocidade do barramento da placa-mãe, priorizando precisão analítica e obediência estrita às regras de formatação em detrimento de velocidade bruta.
-
----
-
-## 🗺️ Roadmap de Desenvolvimento (Milestones)
-
-O projeto é construído de forma modular e incremental. Graças ao avanço da arquitetura de backend e filtros defensivos, as fundições principais foram consolidadas:
-
-### Fase 0: Infraestrutura de IA Local (Ollama)
-- [x] Instalação e configuração do servidor Ollama no ambiente de desenvolvimento.
-- [x] Testes de *benchmarking*, validação de alucinações sintáticas e homologação do modelo (Migração de Llama 3.1 8B para **Qwen 2.5 14B**).
-
-### Fase 1: Fundação do Motor & Interface Chat
-- [x] Criação do layout base em Angular utilizando Standalone Components e submissão reativa de inputs.
-- [x] Estruturação da API em .NET 10 com suporte a WebAPI RESTful padrão.
-- [x] Integração do backend em C# (Semantic Kernel) com a API REST local do Ollama.
-
-### Fase 2: Streaming de Dados & Experiência Fluida
-- [x] Refatoração da comunicação para WebSockets utilizando **ASP.NET Core SignalR** para fornecer streaming de texto em tempo real no frontend.
-- [x] Implementação do serviço de gestão de histórico de chat na memória do backend.
-
-### Fase 3: Engenharia de Prompts Avançada & Análise de Arquivos
-- [x] Criação do pipeline de análise comparativa (Vaga vs. Currículo).
-- [x] Implementação do padrão de prompt em dois estágios (*Generator-Refiner*) com tratamento automático para perfis divergentes.
-- [x] Implementação de travas lógicas e interceptadores de fechamento de fluxo em C# para eliminação de redundâncias de escrita.
-- [ ] Implementação física do módulo de Upload de Arquivos (extração de texto de arquivos `.pdf`/`.docx`).
-
-### Fase 4: Persistência & Governança Executiva
-- [x] Integração de persistência em banco de dados (SQL Server) via Entity Framework Core para salvar históricos e dados de análise.
-- [x] Implementação de autenticação segura e controle de contexto de usuário.
+### 🎨 Frontend Reativo (Angular 22)
+* **Controle de Estado Moderno (Angular Signals):** Gestão reativa de estados de tela (Gatilhos de carregamento como *"Conectando ao mentor e analisando..."*, exibição de perfis e fluxos de erro).
+* **Streaming Consumer (RxJS):** Ingestão contínua do fluxo de tokens do SignalR com efeito de digitação em tempo real.
+* **Interface Restrita e Autenticada:** Fluxo estruturado contendo uma **Landing Page pública** e uma **Rota Protegida (`/analise`)** blindada por um `AuthGuard` nativo do Auth0.
+* **Gestão de Perfil na UI:** Componente de dashboard integrado com o Auth0 para exibição de avatar do usuário logado, dropdown de controle e gatilho de logout.
+* **Design Visual:** Interface construída com Tailwind CSS 4, adotando um tema escuro customizado baseado na paleta *emerald*.
 
 ---
 
-## 🚀 Como Executar Localmente (Ambiente de Desenvolvimento)
+## 🛠️ Status do Roadmap de Desenvolvimento
 
-### Pré-requisitos
-* SDK do [.NET 10.0](https://dotnet.microsoft.com/) instalado.
-* [Node.js](https://nodejs.org/) (Versão LTS recomendada).
-* [Angular CLI](https://angular.dev/) instalado globalmente.
+O projeto encontra-se em estágio avançado de maturidade de sua fundação crítica, possuindo algumas features legadas e módulos futuros bem definidos:
 
-### 🧠 1. Configurando o Servidor de IA (Ollama)
-1. Faça o download e instale o [Ollama](https://ollama.com/).
-2. Abra seu terminal e baixe a versão homologada de 14B da família Qwen:
-   ollama run qwen2.5:14b
-3. Mantenha o serviço do Ollama rodando em segundo plano (porta padrão `11434`).
+- [x] **Infraestrutura Básica de IA:** Configuração do Ollama local e homologação do modelo estável **Qwen 2.5 14B Instruct (Q4_K_M)**.
+- [x] **Fundação de Interface:** Landing page pública, Dashboard de análise em Angular 22 e componentização reativa via Signals.
+- [x] **Segurança:** Integração completa com **Auth0** para autenticação JWT e repasse de *access token* via query string na conexão do SignalR.
+- [x] **Pipeline de Análise Inteligente:** Mecanismo *Generator-Refiner* em C#, controle de timeout de hardware, saída rápida para dados divergentes e guilhotina sintática de strings.
+- [x] **Persistência do Resultado:** Modelagem de dados EF Core (SQL Server) salvando relatórios pós-streaming de forma automática.
+- [⚠️] **Endpoints REST Paralelos:** O controlador `CareerMentorController` disponibiliza o endpoint síncrono `evaluate-gap` (sem streaming, Temp=0). Atualmente, ele funciona como um recurso isolado/legado e **não é consumido** pela aplicação Angular (`career-mentor.ts` desativado), operando sem validação de política de autorização externa.
+- [ ] **Fase 3 (Upload Automático):** Implementação do parser físico para extração de textos diretamente de arquivos `.pdf` ou `.docx` (Pendente).
+- [ ] **Fase 4 (Leitura de Históricos):** Criação de endpoints de consulta na API e componentes visuais de listagem na UI para ler os relatórios persistidos no banco de dados (Atualmente a escrita é consolidada, mas a leitura é inexistente na interface).
+- [ ] **Fase 5 (Expansão Conversacional):** Evolução do fluxo de análise *One-Shot* atual para um assistente de chat multi-turno contínuo com histórico mantido em sessão (Visão de Produto).
 
-### ⚙️ 2. Executando a API (.NET)
-1. Navegue até a pasta do servidor: `cd CareerEngineering.Api`
-2. Restaure os pacotes: `dotnet restore`
-3. Execute as migrações do banco de dados (EF Core) se necessário.
-4. Execute o servidor: `dotnet run`
+---
 
-### 💻 3. Executando o Cliente (Angular)
-1. Navegue até a pasta do cliente: `cd CareerEngineering.Client`
-2. Instale as dependências: `npm install`
-3. Inicie a aplicação com Hot Reload: `ng serve`
-4. Abra o navegador em: `http://localhost:4200`
+## 🚀 Requisitos e Como Executar Localmente
+
+Diferente de aplicações web tradicionais, o ecossistema local exige a orquestração e configuração prévia de três pilares de infraestrutura.
+
+### 📋 Pré-requisitos Obrigatórios
+1. **Ollama:** Servidor de IA local instalado e rodando.
+2. **SQL Server:** Instância ativa de banco de dados relacional.
+3. **Auth0 Account:** Um Tenant/Application configurado no Auth0 para prover as chaves de validação JWT e as configurações do cliente front-end.
+
+---
+
+### 🏃 Compartilhamento de Passos para Inicialização
+
+#### 1. Preparando o Cérebro de IA (Ollama)
+Com o Ollama ativo em segundo plano na porta padrão 11434, baixe o modelo homologado executando o comando a seguir no terminal:
+
+ollama run qwen2.5:14b
+
+(Nota de Hardware: O modelo exige cerca de 9.2 GB em disco. Em máquinas com GPUs de 6GB VRAM como a GTX 1060, o Ollama fará o transbordo automático de parte dos parâmetros para a memória RAM de 32GB, gerando uma taxa estável porém contida de tokens por segundo devido ao limite do barramento).
+
+#### 2. Configurando as Variáveis e Executando a API (.NET)
+1. Certifique-se de que as chaves do seu provedor Auth0 e a string de conexão do seu SQL Server estejam devidamente preenchidas no arquivo `appsettings.Development.json` na pasta `CareerEngineering.Api`.
+2. Abra o terminal na raiz do projeto da API e aplique as migrações do Entity Framework para estruturar o banco de dados:
+   dotnet ef database update
+3. Execute o servidor de backend:
+   dotnet run
+4. A documentação interativa dos endpoints (Scalar) ficará disponível automaticamente pelo navegador através do mapeamento de desenvolvimento do ambiente .NET.
+
+#### 3. Inicializando o Painel Cliente (Angular)
+1. Navegue até o diretório do cliente: cd CareerEngineering.Client
+2. Instale os pacotes de dependências do ecossistema:
+   npm install
+3. Inicie o servidor de desenvolvimento do Angular com Hot Reload:
+   ng serve
+4. Acesse o sistema através do endereço local padrão: http://localhost:4200
 
 ---
 
