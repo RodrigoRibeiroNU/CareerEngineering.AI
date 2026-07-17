@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
+using System.Security.Claims;
+using System.Text;
+using CareerEngineering.Api.Services;
 
 namespace CareerEngineering.Api.Hubs;
 
@@ -10,19 +12,27 @@ namespace CareerEngineering.Api.Hubs;
 public class CareerChatHub : Hub
 {
     private readonly Kernel _kernel;
+    private readonly ICareerMentorService _mentorService; // 🔥 Injetando nosso serviço de dados
 
-    public CareerChatHub(Kernel kernel)
+    public CareerChatHub(Kernel kernel, ICareerMentorService mentorService)
     {
         _kernel = kernel;
+        _mentorService = mentorService;
     }
 
-    public async Task StartAnalysis(string jobDescription, string resumeText)
+    public async Task StartAnalysis(string jobDescription, string resumeText, string userName, string userEmail)
     {
-        var userId = Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        // 1. Extração segura das claims do usuário autenticado no Auth0
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            await Clients.Caller.SendAsync("ReceiveToken", "❌ Erro de autenticação: Usuário não identificado.");
+            return;
+        }
 
         var chatService = _kernel.GetRequiredService<IChatCompletionService>();
         
-        // 🔥 FASE 3: O System Prompt Profissional
         string systemPrompt = @"Você é um Tech Recruiter Sênior e Engenheiro de Software especialista. 
 Sua ÚNICA função é analisar o gap (lacunas) entre o currículo fornecido e a descrição da vaga.
 
@@ -34,17 +44,43 @@ REGRAS ESTRITAS DE COMPORTAMENTO:
 5. TOM: Seja objetivo, profissional e construtivo.";
 
         var chatHistory = new ChatHistory(systemPrompt);
-        
-        // Enviamos os dados do usuário de forma bem estruturada
         chatHistory.AddUserMessage($"--- VAGA ---\n{jobDescription}\n\n--- CURRÍCULO ---\n{resumeText}");
 
         var stream = chatService.GetStreamingChatMessageContentsAsync(chatHistory);
+        var fullResponseBuilder = new StringBuilder(); // 🔥 Acumulador do resultado para o banco de dados
 
         await foreach (var content in stream)
         {
             if (!string.IsNullOrEmpty(content.Content))
             {
+                // Envia o pedaço ao front-end em tempo real
                 await Clients.Caller.SendAsync("ReceiveToken", content.Content);
+                
+                // Acumula para salvar depois
+                fullResponseBuilder.Append(content.Content);
+            }
+        }
+
+        // 2. Persistência inteligente pós-streaming
+        var resultadoCompleto = fullResponseBuilder.ToString();
+
+        if (!string.IsNullOrEmpty(resultadoCompleto) && 
+        !resultadoCompleto.Contains("⚠️ Por favor, forneça uma descrição de vaga"))
+        {
+            try
+            {
+                await _mentorService.SalvarAnaliseAsync(
+                    userId,
+                    userName, // 🔥 Agora usa o nome correto vindo do Angular
+                    userEmail, // 🔥 Agora usa o e-mail correto vindo do Angular
+                    jobDescription,
+                    resumeText,
+                    resultadoCompleto
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DB ERROR] Falha ao salvar análise: {ex.Message}");
             }
         }
     }

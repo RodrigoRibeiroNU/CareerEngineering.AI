@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.SemanticKernel;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using CareerEngineering.Api.Hubs;
+using CareerEngineering.Api.Services;
+using CareerEngineering.Api.Data;
 
 #pragma warning disable SKEXP0010 // Suprime avisos de recursos experimentais da IA
 
@@ -23,12 +26,32 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateAudience = true,
-            ValidAudience = builder.Configuration["Auth0:Audience"], // O seu identifier
+            ValidAudience = builder.Configuration["Auth0:Audience"],
             ValidateIssuer = true,
             ValidIssuer = builder.Configuration["Auth0:Domain"]
         };
-    });
 
+        // 🔥 A MUDANÇA ENTRA AQUI:
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // 1. O .NET intercepta a requisição e verifica se há um "access_token" na URL (Query String)
+                var accessToken = context.Request.Query["access_token"];
+
+                // 2. Se houver um token E o destino for o nosso Hub do SignalR...
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/careerChatHub"))
+                {
+                    // 3. Nós pegamos manualmente esse token da URL e falamos para o .NET:
+                    // "Ei, use este token aqui para autenticar o usuário!"
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
+    });
+    
 builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
@@ -58,6 +81,12 @@ builder.Services.AddSingleton<Kernel>(sp =>
     );
     return kernelBuilder.Build();
 });
+
+// Registrar o nosso serviço de mentoria de carreira
+builder.Services.AddScoped<ICareerMentorService, CareerMentorService>();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // ==========================================
 // 2. CONFIGURAÇÃO DO PIPELINE (Middlewares)
