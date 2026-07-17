@@ -15,43 +15,59 @@ O **CareerEngineering.AI** é uma plataforma inteligente e assistente conversaci
 
 A plataforma foi desenhada seguindo os mais rigorosos padrões arquiteturais corporativos, focando no desacoplamento entre o motor de interface do usuário, as regras de negócio e os serviços de orquestração de Inteligência Artificial.
 
-### 🖥️ Backend Principal (.NET 10)
-* **Orquestração GenAI Local (Ollama):** Integração com o servidor local do Ollama utilizando o SDK oficial da Microsoft (Semantic Kernel) ou `HttpClient` nativo, permitindo o consumo de modelos poderosos (como *Llama 3* ou *Mistral*) diretamente da máquina host.
-* **Prompt Engineering Isolation:** Camada dedicada para armazenamento e injeção dinâmica de System Prompts baseados no contexto do usuário (ex: regras ocultas que obrigam a IA a agir como um Tech Recruiter sênior de elite).
-* **Gestão de Contexto e Histórico:** Implementação de um serviço de memória para manter o contexto reativo do chat, garantindo que o agente se recorde das respostas e informações enviadas anteriormente na mesma sessão.
-* **Validação Rigorosa:** Uso de bibliotecas de validação para filtrar as mensagens do usuário e mitigar riscos de Injeção de Prompts (Prompt Injection).
+### 🖥️ Backend Principal (.NET 10 & SignalR)
+* **Orquestração GenAI Local (Ollama):** Integração com o servidor local do Ollama utilizando o SDK oficial da Microsoft (Semantic Kernel), consumindo modelos de alta precisão cognitiva de forma transparente.
+* **Engenharia de Prompt em Duplo Estágio (Generator-Refiner):** Arquitetura que divide a carga de trabalho em duas etapas: um extrator de dados frio focado na validação rígida de dados e um refinador consultivo responsável pela formatação final da mentoria.
+* **Filtros Decisórios Interceptadores:** Camada lógica desenvolvida em C# que analisa os tokens do streaming em tempo real, aplicando travas de segurança (*CancellationToken* com Timeout) e guilhotinas sintáticas para barrar alucinações de layout ou redundâncias do modelo.
+* **Comunicação em Tempo Real:** Uso do ASP.NET Core SignalR para streaming assíncrono de tokens caractere por caractere, minimizando a percepção de latência do modelo local.
 
 ### 🎨 Frontend Reativo (Angular & RxJS)
-* **Modern Reactivity (Angular Signals):** Controle fino e reativo de estados de carregamento, interações do usuário e gatilhos visuais da interface sem sobrecarga de renderização.
-* **Efeito Streaming (RxJS):** Motor de processamento assíncrono projetado para ler fluxos de dados de texto em tempo real (Server-Sent Events / WebSockets via SignalR), gerando a experiência visual de "máquina de escrever" do texto à medida que a IA responde.
-* **Exportação Analítica:** Funcionalidade nativa na UI para exportar os roteiros e planos de carreira gerados pela IA em formato Markdown estruturado ou documentos PDF formatados.
+* **Modern Reactivity (Angular Signals):** Controle fino e reativo de estados de carregamento (*"Conectando ao mentor..."*), interações do usuário e gatilhos visuais da interface sem sobrecarga de renderização.
+* **Efeito Streaming (RxJS + SignalR Client):** Motor de processamento projetado para ler os fluxos de dados enviados pelo backend em tempo real, gerando a experiência visual fluida de digitação na tela.
+* **Layout Adaptativo Resiliente:** View com dimensionamento otimizado (ex: `h-[72vh]`) configurada para evitar quebras visuais e rolagens involuntárias durante respostas extensas de análises de perfil.
+
+---
+
+## 🖥️ Especificações de Hardware para Execução Local
+
+Este projeto foi desenhado como um estudo de capacidade técnica para rodar LLMs (Large Language Models) de forma 100% local. Devido à escala do modelo de linguagem homologado, a arquitetura exige o compartilhamento estratégico de recursos entre CPU, GPU e memória RAM.
+
+### Requisitos Mínimos (Homologado: Qwen 2.5 14B Instruct Q4_K_M)
+* **Processador (CPU):** AMD Ryzen 5 3600X / Intel Core i5 (9ª geração) ou superior.
+* **Memória RAM:** 32 GB DDR4 (Mínimo de 3000 MHz recomendado para evitar gargalos de barramento durante o transbordo).
+* **Placa de Vídeo (GPU):** NVIDIA GeForce GTX 1060 6GB (ou qualquer GPU com suporte a CUDA e mínimo de 6GB VRAM).
+* **Armazenamento:** Mínimo de 15 GB livres em SSD (A execução em HDD torna a latência de leitura inicial inviável).
+
+> **Nota de Arquitetura:** O modelo de 14B (~9.2 GB em disco) excede os 6GB de VRAM físicos da placa de vídeo de desenvolvimento. O ecossistema realiza o transbordo (*offloading*) dos parâmetros excedentes para a memória RAM. Como consequência, a taxa de geração (*Tokens por Segundo*) opera sob restrição de velocidade do barramento da placa-mãe, priorizando precisão analítica e obediência estrita às regras de formatação em detrimento de velocidade bruta.
 
 ---
 
 ## 🗺️ Roadmap de Desenvolvimento (Milestones)
 
-O projeto está sendo construído de forma modular e incremental, dividido em fases estratégicas:
+O projeto é construído de forma modular e incremental. Graças ao avanço da arquitetura de backend e filtros defensivos, as fundições principais foram consolidadas:
 
 ### Fase 0: Infraestrutura de IA Local (Ollama)
 - [x] Instalação e configuração do servidor Ollama no ambiente de desenvolvimento.
-- [x] Testes de *benchmarking* e seleção do modelo de linguagem (LLM) ideal para o projeto (Llama 3.1).
+- [x] Testes de *benchmarking*, validação de alucinações sintáticas e homologação do modelo (Migração de Llama 3.1 8B para **Qwen 2.5 14B**).
 
 ### Fase 1: Fundação do Motor & Interface Chat
 - [x] Criação do layout base em Angular utilizando Standalone Components e submissão reativa de inputs.
 - [x] Estruturação da API em .NET 10 com suporte a WebAPI RESTful padrão.
-- [x] Integração do backend em C# (Semantic Kernel) com a API REST local do Ollama (Blindagem com Temp 0).
+- [x] Integração do backend em C# (Semantic Kernel) com a API REST local do Ollama.
 
 ### Fase 2: Streaming de Dados & Experiência Fluida
-- [ ] Refatoração da comunicação para WebSockets (ASP.NET Core SignalR) para fornecer streaming de texto caractere por caractere no frontend.
-- [ ] Implementação do serviço de gestão de histórico de chat na memória do backend.
+- [x] Refatoração da comunicação para WebSockets utilizando **ASP.NET Core SignalR** para fornecer streaming de texto em tempo real no frontend.
+- [x] Implementação do serviço de gestão de histórico de chat na memória do backend.
 
 ### Fase 3: Engenharia de Prompts Avançada & Análise de Arquivos
-- [ ] Criação do módulo de Upload de Currículos (extração de texto de arquivos .pdf/.docx).
-- [ ] Implementação de prompts dinâmicos estruturados para gerar mapas de lacunas (Gap Analysis) baseados em vagas reais de mercado.
+- [x] Criação do pipeline de análise comparativa (Vaga vs. Currículo).
+- [x] Implementação do padrão de prompt em dois estágios (*Generator-Refiner*) com tratamento automático para perfis divergentes.
+- [x] Implementação de travas lógicas e interceptadores de fechamento de fluxo em C# para eliminação de redundâncias de escrita.
+- [ ] Implementação física do módulo de Upload de Arquivos (extração de texto de arquivos `.pdf`/`.docx`).
 
 ### Fase 4: Persistência & Governança Executiva
-- [ ] Integração de persistência em banco de dados (PostgreSQL/SQL Server) via Entity Framework Core para salvar históricos de usuários.
-- [ ] Implementação de autenticação segura via JSON Web Tokens (JWT).
+- [x] Integração de persistência em banco de dados (SQL Server) via Entity Framework Core para salvar históricos e dados de análise.
+- [x] Implementação de autenticação segura e controle de contexto de usuário.
 
 ---
 
@@ -63,16 +79,15 @@ O projeto está sendo construído de forma modular e incremental, dividido em fa
 * [Angular CLI](https://angular.dev/) instalado globalmente.
 
 ### 🧠 1. Configurando o Servidor de IA (Ollama)
-Como este projeto processa os dados de forma privada e local, você precisará preparar o motor de IA:
 1. Faça o download e instale o [Ollama](https://ollama.com/).
-2. Abra o seu terminal e faça o pull do modelo base utilizado no projeto (exemplo com o Llama 3):
-   `ollama run llama3`
-3. Mantenha o serviço do Ollama rodando em segundo plano (geralmente ele roda na porta `11434`).
+2. Abra seu terminal e baixe a versão homologada de 14B da família Qwen:
+   ollama run qwen2.5:14b
+3. Mantenha o serviço do Ollama rodando em segundo plano (porta padrão `11434`).
 
 ### ⚙️ 2. Executando a API (.NET)
 1. Navegue até a pasta do servidor: `cd CareerEngineering.Api`
 2. Restaure os pacotes: `dotnet restore`
-3. Verifique no `appsettings.json` se a URL do Ollama está apontando para `http://localhost:11434`.
+3. Execute as migrações do banco de dados (EF Core) se necessário.
 4. Execute o servidor: `dotnet run`
 
 ### 💻 3. Executando o Cliente (Angular)
@@ -85,7 +100,7 @@ Como este projeto processa os dados de forma privada e local, você precisará p
 
 ## 👤 Autor
 
-Desenvolvido por **Rodrigo Ribeiro**. 
+Desenvolvido por **Rodrigo Ribeiro**.  
 Especialista em unir arquitetura robusta no backend com interfaces dinâmicas no frontend. Se você quer conversar sobre integração de IA em sistemas reais, Engenharia de Prompts ou desenvolvimento Full Stack, conecte-se comigo:
 
 * **LinkedIn:** [Acessar meu Perfil Profissional](https://linkedin.com/in/rodrigo-ribeiro-developer)
