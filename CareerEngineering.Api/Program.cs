@@ -51,7 +51,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
     });
-    
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
@@ -70,12 +70,12 @@ builder.Services.AddCors(options =>
               .AllowCredentials());
 });
 
-// Núcleo de Inteligência Artificial (Semantic Kernel + Ollama)
+// Núcleo de Inteligência Artificial (Semantic Kernel + qwen2)
 builder.Services.AddSingleton<Kernel>(sp => 
 {
     var kernelBuilder = Kernel.CreateBuilder();
     kernelBuilder.AddOpenAIChatCompletion(
-        modelId: "llama3.1", 
+        modelId: "qwen2.5:14b", 
         apiKey: "ignore", 
         endpoint: new Uri("http://localhost:11434/v1")
     );
