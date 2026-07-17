@@ -1,9 +1,11 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '@auth0/auth0-angular';
 import { FormsModule } from '@angular/forms';
 import { SignalRService } from '../../services/signal-r';
+import { SystemService } from '../../services/system';
 import { AnalysisResultComponent } from '../analysis-result/analysis-result';
+import packageJson from '../../../../package.json';
 
 @Component({
   selector: 'app-dashboard',
@@ -11,11 +13,14 @@ import { AnalysisResultComponent } from '../analysis-result/analysis-result';
   imports: [FormsModule, AnalysisResultComponent],
   templateUrl: './dashboard.html',
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   private readonly signalRService = inject(SignalRService);
+  private readonly systemService = inject(SystemService);
   readonly auth = inject(AuthService);
 
   protected readonly user = toSignal(this.auth.user$);
+  protected readonly activeModel = this.systemService.activeModel;
+  protected readonly appVersion = `Versão ${packageJson.version}`;
   protected readonly isDropdownOpen = signal(false);
   protected readonly jobDescription = signal('');
   protected readonly resumeText = signal('');
@@ -34,6 +39,10 @@ export class DashboardComponent {
         this.loading.set(false);
       }
     });
+  }
+
+  ngOnInit(): void {
+    this.systemService.loadActiveModel();
   }
 
   protected toggleDropdown(): void {

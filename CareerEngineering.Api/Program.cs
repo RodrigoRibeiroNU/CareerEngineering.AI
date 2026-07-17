@@ -34,6 +34,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddControllers();
 builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
@@ -67,6 +68,7 @@ app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
 app.MapHub<CareerChatHub>("/careerChatHub");
 
 app.Run();

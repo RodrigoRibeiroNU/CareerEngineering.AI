@@ -1,13 +1,13 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { authHttpInterceptorFn, provideAuth0 } from '@auth0/auth0-angular';
 import { routes } from './app.routes';
-import { provideHttpClient } from '@angular/common/http';
-import { provideAuth0 } from '@auth0/auth0-angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authHttpInterceptorFn])),
     provideRouter(routes),
     provideAuth0({
       domain: 'dev-41nhlxtdpvk10ged.us.auth0.com',
@@ -15,8 +15,11 @@ export const appConfig: ApplicationConfig = {
       authorizationParams: {
         redirect_uri: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4200',
         audience: 'https://careerengineering-api.com',
-        scope: 'openid profile email'
-      }
-    })
-  ]
+        scope: 'openid profile email',
+      },
+      httpInterceptor: {
+        allowedList: ['http://localhost:5019/api/*'],
+      },
+    }),
+  ],
 };
