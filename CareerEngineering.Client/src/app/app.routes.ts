@@ -7,16 +7,16 @@ export const routes: Routes = [
   {
     path: '',
     component: LandingComponent,
-    title: 'CareerEngineering.AI - Bem-vindo'
+    title: 'CareerEngineering.AI - Bem-vindo',
   },
   {
     path: 'analise',
     component: DashboardComponent,
     title: 'CareerEngineering.AI - Painel de Análise',
-    canActivate: [AuthGuard] // 🔥 O Auth0 protege a rota e redireciona ao login de forma 100% automática!
+    canActivate: [AuthGuard],
   },
   {
     path: '**',
-    redirectTo: '' // Fallback para a Landing Page caso digitem uma rota inexistente
-  }
+    redirectTo: '',
+  },
 ];

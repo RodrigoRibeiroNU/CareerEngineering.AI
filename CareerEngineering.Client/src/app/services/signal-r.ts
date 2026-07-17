@@ -1,46 +1,85 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { AuthService } from '@auth0/auth0-angular';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SignalRService {
-  private hubConnection!: signalR.HubConnection;
-  private auth = inject(AuthService);
-  public streamMessage = signal<string>('');
+  private readonly auth = inject(AuthService);
+  private hubConnection: signalR.HubConnection | null = null;
+  private connectPromise: Promise<void> | null = null;
+  private listenersRegistered = false;
 
-  // Não conectamos mais no constructor!
-  constructor() {}
+  readonly streamMessage = signal('');
+  readonly analysisComplete = signal(0);
 
-  public async connect() {
-    // Só conecta se estiver autenticado
-    const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
-    if (!isAuthenticated) return;
+  async ensureConnected(): Promise<void> {
+    if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
+      return;
+    }
 
-    const token = await firstValueFrom(this.auth.getAccessTokenSilently());
+    if (this.connectPromise) {
+      return this.connectPromise;
+    }
 
-    this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5019/careerChatHub', {
-        accessTokenFactory: () => token
-      })
-      .build();
-
-    this.hubConnection.on('ReceiveToken', (token: string) => {
-      this.streamMessage.update(prev => prev + token);
+    this.connectPromise = this.startConnection().finally(() => {
+      this.connectPromise = null;
     });
 
-    await this.hubConnection.start();
+    return this.connectPromise;
   }
 
-  public sendAnalysisRequest(job: string, resume: string, userName: string, userEmail: string): void {
+  async startAnalysis(
+    job: string,
+    resume: string,
+    userName: string,
+    userEmail: string,
+  ): Promise<void> {
     this.streamMessage.set('');
-    
-    // Mantemos sua excelente verificação de segurança original!
-    if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
-      this.hubConnection.invoke('StartAnalysis', job, resume, userName, userEmail)
-        .catch(err => console.error('Erro ao invocar StartAnalysis:', err));
-    } else {
-      console.warn('Conexão SignalR não está ativa. Status:', this.hubConnection?.state);
+    await this.ensureConnected();
+
+    if (this.hubConnection?.state !== signalR.HubConnectionState.Connected) {
+      throw new Error('Conexão SignalR não está ativa.');
     }
+
+    await this.hubConnection.invoke('StartAnalysis', job, resume, userName, userEmail);
+  }
+
+  private async startConnection(): Promise<void> {
+    const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
+    if (!isAuthenticated) {
+      throw new Error('Usuário não autenticado.');
+    }
+
+    if (!this.hubConnection) {
+      this.hubConnection = new signalR.HubConnectionBuilder()
+        .withUrl('http://localhost:5019/careerChatHub', {
+          accessTokenFactory: () => firstValueFrom(this.auth.getAccessTokenSilently()),
+        })
+        .withAutomaticReconnect()
+        .build();
+
+      this.registerListeners();
+    }
+
+    if (this.hubConnection.state === signalR.HubConnectionState.Disconnected) {
+      await this.hubConnection.start();
+    }
+  }
+
+  private registerListeners(): void {
+    if (!this.hubConnection || this.listenersRegistered) {
+      return;
+    }
+
+    this.hubConnection.on('ReceiveToken', (chunk: string) => {
+      this.streamMessage.update((prev) => prev + chunk);
+    });
+
+    this.hubConnection.on('AnalysisCompleted', () => {
+      this.analysisComplete.update((n) => n + 1);
+    });
+
+    this.listenersRegistered = true;
   }
 }

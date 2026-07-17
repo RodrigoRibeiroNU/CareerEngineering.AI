@@ -1,17 +1,8 @@
-import { ApplicationConfig, PLATFORM_ID, APP_INITIALIZER, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAuth0 } from '@auth0/auth0-angular';
-import { isPlatformBrowser } from '@angular/common';
-
-export function authInitializer(platformId: Object) {
-  return () => {
-    if (isPlatformBrowser(platformId)) {
-      // Aqui você coloca a lógica de inicialização do Auth0
-    }
-  };
-}
 
 export const appConfig: ApplicationConfig = {
   providers: [

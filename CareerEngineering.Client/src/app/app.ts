@@ -4,10 +4,7 @@ import { RouterOutlet } from '@angular/router';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [ RouterOutlet ], // 🔥 Único import necessário para gerenciar a navegação de páginas!
+  imports: [RouterOutlet],
   templateUrl: './app.html',
 })
-export class App {
-  // A classe do componente principal fica totalmente vazia e limpa!
-  constructor() {}
-}
+export class App {}

@@ -1,32 +1,26 @@
 @use "tailwindcss";
 
-/* ==========================================
-   CUSTOMIZAÇÃO GLOBAL DE SCROLLBAR (DARK THEME)
-   ========================================== */
-
-/* Captura navegadores baseados em Webkit (Chrome, Edge, Opera, Safari) */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px; /* Para rolagens horizontais, se houver */
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: #020617; /* w-slate-950 */
-    border-radius: 8px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: #334155; /* bg-slate-700 */
-    border-radius: 8px;
-    border: 2px solid #020617; /* Cria um espaçamento elegante */
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: #10b981; /* bg-emerald-500 (Efeito hover igual ao ChatGPT) */
-  }
-  
-  /* Suporte para Firefox */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: #334155 #020617;
-  }
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 8px;
+  border: 2px solid #020617;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #020617;
+}

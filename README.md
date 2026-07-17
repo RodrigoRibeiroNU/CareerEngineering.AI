@@ -24,8 +24,6 @@ O sistema está estruturado em um modelo desacoplado, utilizando tecnologias mod
 * **Resiliência de Hardware:** Controle de timeout assíncrono limitando a requisição do primeiro estágio a **45 segundos** via `CancellationToken`, evitando travamentos por estrangulamento de memória RAM/VRAM.
 * **Streaming por WebSockets:** Centralização do fluxo produtivo no Hub SignalR (`/careerChatHub`), transmitindo pedaços de texto em tempo real com suporte a credenciais e CORS restrito a ambiente local seguro (`http://localhost:4200`).
 * **Persistência de Auditoria (Write-Only):** Conclusão do stream dispara o salvamento em banco relacional (SQL Server) através do Entity Framework Core, registrando a entidade `Usuario` e a respectiva `Analise` vinculada (ignorado no caso de saída por divergência).
-* **Documentação de API:** Configuração nativa de OpenAPI utilizando a interface moderna do **Scalar** disponível em ambiente de desenvolvimento.
-
 ### 🎨 Frontend Reativo (Angular 22)
 * **Controle de Estado Moderno (Angular Signals):** Gestão reativa de estados de tela (Gatilhos de carregamento como *"Conectando ao mentor e analisando..."*, exibição de perfis e fluxos de erro).
 * **Streaming Consumer (RxJS):** Ingestão contínua do fluxo de tokens do SignalR com efeito de digitação em tempo real.
@@ -44,7 +42,6 @@ O projeto encontra-se em estágio avançado de maturidade de sua fundação crí
 - [x] **Segurança:** Integração completa com **Auth0** para autenticação JWT e repasse de *access token* via query string na conexão do SignalR.
 - [x] **Pipeline de Análise Inteligente:** Mecanismo *Generator-Refiner* em C#, controle de timeout de hardware, saída rápida para dados divergentes e guilhotina sintática de strings.
 - [x] **Persistência do Resultado:** Modelagem de dados EF Core (SQL Server) salvando relatórios pós-streaming de forma automática.
-- [⚠️] **Endpoints REST Paralelos:** O controlador `CareerMentorController` disponibiliza o endpoint síncrono `evaluate-gap` (sem streaming, Temp=0). Atualmente, ele funciona como um recurso isolado/legado e **não é consumido** pela aplicação Angular (`career-mentor.ts` desativado), operando sem validação de política de autorização externa.
 - [ ] **Fase 3 (Upload Automático):** Implementação do parser físico para extração de textos diretamente de arquivos `.pdf` ou `.docx` (Pendente).
 - [ ] **Fase 4 (Leitura de Históricos):** Criação de endpoints de consulta na API e componentes visuais de listagem na UI para ler os relatórios persistidos no banco de dados (Atualmente a escrita é consolidada, mas a leitura é inexistente na interface).
 - [ ] **Fase 5 (Expansão Conversacional):** Evolução do fluxo de análise *One-Shot* atual para um assistente de chat multi-turno contínuo com histórico mantido em sessão (Visão de Produto).
@@ -77,8 +74,6 @@ ollama run qwen2.5:14b
    dotnet ef database update
 3. Execute o servidor de backend:
    dotnet run
-4. A documentação interativa dos endpoints (Scalar) ficará disponível automaticamente pelo navegador através do mapeamento de desenvolvimento do ambiente .NET.
-
 #### 3. Inicializando o Painel Cliente (Angular)
 1. Navegue até o diretório do cliente: cd CareerEngineering.Client
 2. Instale os pacotes de dependências do ecossistema:
