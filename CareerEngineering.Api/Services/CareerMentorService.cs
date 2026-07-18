@@ -1,16 +1,17 @@
-using Microsoft.EntityFrameworkCore;
-using CareerEngineering.Api.Data;
 using CareerEngineering.Api.Entities;
 
 namespace CareerEngineering.Api.Services;
 
+/// <summary>
+/// Adaptador legado: cria análise + primeira mensagem do assistente via IAnaliseService.
+/// </summary>
 public class CareerMentorService : ICareerMentorService
 {
-    private readonly AppDbContext _context;
+    private readonly IAnaliseService _analiseService;
 
-    public CareerMentorService(AppDbContext context)
+    public CareerMentorService(IAnaliseService analiseService)
     {
-        _context = context;
+        _analiseService = analiseService;
     }
 
     public async Task<Analise> SalvarAnaliseAsync(
@@ -21,35 +22,36 @@ public class CareerMentorService : ICareerMentorService
         string curriculo,
         string resultado)
     {
-        var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Id == usuarioId);
+        await _analiseService.EnsureUsuarioAsync(usuarioId, nome, email);
 
-        if (usuario is null)
+        var titulo = InferirTitulo(vaga);
+        var analise = await _analiseService.CriarAnaliseAsync(
+            usuarioId,
+            titulo,
+            vaga,
+            curriculo,
+            "qwen2.5:14b");
+
+        if (!string.IsNullOrWhiteSpace(resultado))
         {
-            usuario = new Usuario
-            {
-                Id = usuarioId,
-                Nome = nome,
-                Email = email,
-                DataCadastro = DateTime.UtcNow
-            };
-
-            _context.Usuarios.Add(usuario);
-            await _context.SaveChangesAsync();
+            await _analiseService.AdicionarMensagemAsync(analise.Id, "assistant", resultado);
         }
 
-        var novaAnalise = new Analise
-        {
-            Id = Guid.NewGuid(),
-            UsuarioId = usuario.Id,
-            VagaText = vaga,
-            CurriculoText = curriculo,
-            Resultado = resultado,
-            DataCriacao = DateTime.UtcNow
-        };
+        return analise;
+    }
 
-        _context.Analises.Add(novaAnalise);
-        await _context.SaveChangesAsync();
+    private static string InferirTitulo(string vaga)
+    {
+        if (string.IsNullOrWhiteSpace(vaga)) return "Nova análise";
 
-        return novaAnalise;
+        var linha = vaga.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(l => l.Trim())
+            .FirstOrDefault(l => l.Length > 0);
+
+        if (string.IsNullOrEmpty(linha)) return "Nova análise";
+
+        const int maxTitulo = 150;
+        if (linha.Length <= maxTitulo) return linha;
+        return linha[..(maxTitulo - 1)].TrimEnd() + "…";
     }
 }

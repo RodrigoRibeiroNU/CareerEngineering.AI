@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Analise> Analises => Set<Analise>();
+    public DbSet<MensagemHistorico> MensagensHistorico => Set<MensagemHistorico>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

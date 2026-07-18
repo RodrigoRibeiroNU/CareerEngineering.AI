@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.SemanticKernel;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 using CareerEngineering.Api.Hubs;
 using CareerEngineering.Api.Services;
 using CareerEngineering.Api.Data;
@@ -35,6 +36,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
@@ -57,6 +59,7 @@ builder.Services.AddSingleton<Kernel>(sp =>
     return kernelBuilder.Build();
 });
 
+builder.Services.AddScoped<IAnaliseService, AnaliseService>();
 builder.Services.AddScoped<ICareerMentorService, CareerMentorService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -67,6 +70,12 @@ var app = builder.Build();
 app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 app.MapControllers();
 app.MapHub<CareerChatHub>("/careerChatHub");
