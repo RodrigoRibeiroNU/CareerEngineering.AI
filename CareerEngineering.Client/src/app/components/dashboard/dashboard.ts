@@ -17,14 +17,14 @@ import { FormsModule } from '@angular/forms';
 import { AnalisesService } from '../../services/analises';
 import { SignalRService } from '../../services/signal-r';
 import { SystemService } from '../../services/system';
+import { NavbarComponent } from '../navbar/navbar';
 import { SidebarComponent } from '../sidebar/sidebar';
 import { AnaliseDetail, ChatMessageView } from '../../models/analise.models';
-import packageJson from '../../../../package.json';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, SidebarComponent],
+  imports: [FormsModule, NavbarComponent, SidebarComponent],
   templateUrl: './dashboard.html',
 })
 export class DashboardComponent implements OnInit {
@@ -34,7 +34,7 @@ export class DashboardComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  readonly auth = inject(AuthService);
+  private readonly auth = inject(AuthService);
 
   private readonly scrollContainer = viewChild<ElementRef<HTMLDivElement>>('chatScroll');
 
@@ -46,11 +46,11 @@ export class DashboardComponent implements OnInit {
   /** Uma tentativa de regeneração por análise nesta sessão (evita loop). */
   private readonly regenerateAttemptedIds = new Set<string>();
 
-  protected readonly user = toSignal(this.auth.user$, { initialValue: null });
-  protected readonly activeModel = this.systemService.activeModel;
-  protected readonly appVersion = `Versão ${packageJson.version}`;
-  protected readonly isDropdownOpen = signal(false);
-  protected readonly sidebarCollapsed = signal(false);
+  private readonly user = toSignal(this.auth.user$, { initialValue: null });
+  /** No mobile inicia fechada (drawer); no desktop inicia aberta. */
+  protected readonly sidebarCollapsed = signal(
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches,
+  );
 
   protected readonly jobDescription = signal('');
   protected readonly resumeText = signal('');
@@ -93,7 +93,7 @@ export class DashboardComponent implements OnInit {
           id: started.id,
           titulo: started.titulo,
           dataCriacao: new Date().toISOString(),
-          modeloLLM: this.activeModel() || 'qwen2.5:14b',
+          modeloLLM: this.systemService.activeModel() || 'qwen2.5:14b',
         });
         void this.router.navigate(['/analise', started.id], { replaceUrl: true });
       });
@@ -139,7 +139,6 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.systemService.loadActiveModel();
     void this.analisesService.loadList();
 
     // Rota → carrega histórico (sem effect, evita loop com navigate).
@@ -151,6 +150,7 @@ export class DashboardComponent implements OnInit {
   /** Botão "+" da sidebar: limpa o chat e abre o formulário de nova análise. */
   protected startNewAnalysis(): void {
     this.resetToNewAnalysisForm();
+    this.closeSidebarOnMobile();
     void this.router.navigateByUrl('/analise');
   }
 
@@ -276,12 +276,15 @@ export class DashboardComponent implements OnInit {
     this.sidebarCollapsed.update((v) => !v);
   }
 
-  protected toggleDropdown(): void {
-    this.isDropdownOpen.update((v) => !v);
+  protected closeSidebar(): void {
+    this.sidebarCollapsed.set(true);
   }
 
-  protected closeDropdown(): void {
-    this.isDropdownOpen.set(false);
+  /** Fecha o drawer overlay apenas em viewports menores que `md`. */
+  protected closeSidebarOnMobile(): void {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      this.sidebarCollapsed.set(true);
+    }
   }
 
   protected async analyze(): Promise<void> {
@@ -334,12 +337,6 @@ export class DashboardComponent implements OnInit {
     if (this.activeAnaliseId() === id) {
       void this.router.navigateByUrl('/analise');
     }
-  }
-
-  protected logout(): void {
-    this.auth.logout({
-      logoutParams: { returnTo: window.location.origin },
-    });
   }
 
   private scrollToBottom(): void {

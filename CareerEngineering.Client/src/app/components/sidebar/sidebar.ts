@@ -7,6 +7,7 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AnalisesService } from '../../services/analises';
@@ -15,18 +16,21 @@ import { AnaliseListItem } from '../../models/analise.models';
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [FormsModule, RouterLink, RouterLinkActive],
+  imports: [NgClass, FormsModule, RouterLink, RouterLinkActive],
   templateUrl: './sidebar.html',
+  /** Host transparente para o `<aside>` participar do flex no desktop. */
+  host: { class: 'contents' },
 })
 export class SidebarComponent {
   private readonly analisesService = inject(AnalisesService);
 
-  /** Controla se o painel está expandido (desktop/mobile). */
+  /** Controla se o painel está oculto (drawer mobile / colapso desktop). */
   readonly collapsed = input(false);
-  readonly toggle = output<void>();
   readonly deleted = output<string>();
   /** Solicita ao Dashboard resetar o formulário de nova análise. */
   readonly newAnalysis = output<void>();
+  /** Emite ao selecionar um item — útil para fechar o drawer no mobile. */
+  readonly navigated = output<void>();
 
   protected readonly analises = this.analisesService.analises;
   protected readonly loadingList = this.analisesService.loadingList;
@@ -36,6 +40,14 @@ export class SidebarComponent {
   protected readonly renameDraft = signal('');
 
   private readonly renameInputs = viewChildren<ElementRef<HTMLInputElement>>('renameInput');
+
+  protected onNewAnalysis(): void {
+    this.newAnalysis.emit();
+  }
+
+  protected onSelectItem(): void {
+    this.navigated.emit();
+  }
 
   protected startRename(item: AnaliseListItem, event: Event): void {
     event.preventDefault();
