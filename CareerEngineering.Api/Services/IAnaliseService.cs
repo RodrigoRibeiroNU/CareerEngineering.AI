@@ -27,6 +27,8 @@ public interface IAnaliseService
     /// </summary>
     Task<IReadOnlyList<MensagemHistorico>> ObterUltimasMensagensAsync(Guid analiseId, int take);
 
+    Task<int> ContarMensagensAsync(Guid analiseId);
+
     Task<bool> AtualizarTituloAsync(Guid id, string usuarioId, string novoTitulo);
 
     Task<bool> ExcluirAsync(Guid id, string usuarioId);

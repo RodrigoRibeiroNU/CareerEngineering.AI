@@ -25,6 +25,8 @@ export class SidebarComponent {
   readonly collapsed = input(false);
   readonly toggle = output<void>();
   readonly deleted = output<string>();
+  /** Solicita ao Dashboard resetar o formulário de nova análise. */
+  readonly newAnalysis = output<void>();
 
   protected readonly analises = this.analisesService.analises;
   protected readonly loadingList = this.analisesService.loadingList;

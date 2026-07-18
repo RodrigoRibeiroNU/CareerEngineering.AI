@@ -129,6 +129,9 @@ public class AnaliseService : IAnaliseService
         return recentes;
     }
 
+    public Task<int> ContarMensagensAsync(Guid analiseId) =>
+        _context.MensagensHistorico.CountAsync(m => m.AnaliseId == analiseId);
+
     public async Task<bool> AtualizarTituloAsync(Guid id, string usuarioId, string novoTitulo)
     {
         var analise = await ObterEntidadeDoUsuarioAsync(id, usuarioId);

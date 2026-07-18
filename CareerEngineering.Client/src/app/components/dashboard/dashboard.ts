@@ -18,7 +18,7 @@ import { AnalisesService } from '../../services/analises';
 import { SignalRService } from '../../services/signal-r';
 import { SystemService } from '../../services/system';
 import { SidebarComponent } from '../sidebar/sidebar';
-import { ChatMessageView } from '../../models/analise.models';
+import { AnaliseDetail, ChatMessageView } from '../../models/analise.models';
 import packageJson from '../../../../package.json';
 
 @Component({
@@ -41,6 +41,10 @@ export class DashboardComponent implements OnInit {
   private lastHandledStartedId: string | null = null;
   private lastHandledComplete = 0;
   private loadingDetailId: string | null = null;
+  /** Evita disparar RegenerateAnalysis em paralelo para o mesmo id. */
+  private readonly regeneratingIds = new Set<string>();
+  /** Uma tentativa de regeneração por análise nesta sessão (evita loop). */
+  private readonly regenerateAttemptedIds = new Set<string>();
 
   protected readonly user = toSignal(this.auth.user$, { initialValue: null });
   protected readonly activeModel = this.systemService.activeModel;
@@ -128,6 +132,8 @@ export class DashboardComponent implements OnInit {
           msgs.map((m) => (m.streaming ? { ...m, streaming: false } : m)),
         );
         void this.analisesService.loadList();
+        // Sincroniza com o banco (cobre stream vazio / regeneração).
+        void this.syncActiveDetailAfterComplete();
       });
     });
   }
@@ -142,15 +148,32 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  private async onRouteIdChange(id: string | null): Promise<void> {
-    // Nova análise (sem id na rota).
-    if (!id) {
-      // Não limpa UI se estamos no meio do streaming de uma análise recém-criada.
-      if (this.loading() && this.lastHandledStartedId) return;
+  /** Botão "+" da sidebar: limpa o chat e abre o formulário de nova análise. */
+  protected startNewAnalysis(): void {
+    this.resetToNewAnalysisForm();
+    void this.router.navigateByUrl('/analise');
+  }
 
-      this.activeAnaliseId.set(null);
-      this.activeTitulo.set(null);
-      this.messages.set([]);
+  private resetToNewAnalysisForm(): void {
+    this.loading.set(false);
+    this.loadingDetailId = null;
+    this.lastHandledStartedId = null;
+    this.activeAnaliseId.set(null);
+    this.activeTitulo.set(null);
+    this.messages.set([]);
+    this.jobDescription.set('');
+    this.resumeText.set('');
+    this.followUpText.set('');
+    this.signalRService.clearSession();
+  }
+
+  private async onRouteIdChange(id: string | null): Promise<void> {
+    // Rota /analise (sem id) → formulário de nova análise.
+    if (!id) {
+      // Evita limpar no meio do StartAnalysis: AnalysisStarted ainda não navegou para /:id.
+      if (this.loading() && !this.activeAnaliseId()) return;
+
+      this.resetToNewAnalysisForm();
       return;
     }
 
@@ -169,6 +192,7 @@ export class DashboardComponent implements OnInit {
     try {
       const detail = await this.analisesService.getById(id);
       if (!detail) {
+        this.resetToNewAnalysisForm();
         void this.router.navigateByUrl('/analise');
         return;
       }
@@ -180,21 +204,72 @@ export class DashboardComponent implements OnInit {
       }
 
       this.activeTitulo.set(detail.titulo);
-      this.messages.set(
-        detail.mensagens
-          .filter((m) => m.role === 'user' || m.role === 'assistant')
-          .map((m) => ({
-            id: m.id,
-            role: m.role as 'user' | 'assistant',
-            conteudo: m.conteudo,
-          })),
-      );
+      const chatMsgs = this.mapChatMessages(detail);
+      this.messages.set(chatMsgs);
       this.scrollToBottom();
+
+      // Análise órfã: registro ok, histórico vazio → regenera o relatório inicial.
+      if (chatMsgs.length === 0) {
+        await this.tryRegenerateIfEmpty(detail);
+      }
     } finally {
       if (this.loadingDetailId === id) {
         this.loadingDetailId = null;
       }
     }
+  }
+
+  private async syncActiveDetailAfterComplete(): Promise<void> {
+    const id = this.activeAnaliseId();
+    if (!id) return;
+
+    const detail = await this.analisesService.getById(id);
+    if (!detail) return;
+
+    this.activeTitulo.set(detail.titulo);
+    const chatMsgs = this.mapChatMessages(detail);
+
+    if (chatMsgs.length > 0) {
+      this.messages.set(chatMsgs);
+      this.scrollToBottom();
+      return;
+    }
+
+    // Ainda vazio após a geração → tenta regenerar uma vez.
+    await this.tryRegenerateIfEmpty(detail);
+  }
+
+  private async tryRegenerateIfEmpty(detail: AnaliseDetail): Promise<void> {
+    const chatMsgs = this.mapChatMessages(detail);
+    if (chatMsgs.length > 0) return;
+
+    if (!detail.descricaoVaga?.trim() || !detail.textoCurriculo?.trim()) return;
+    if (this.regeneratingIds.has(detail.id) || this.regenerateAttemptedIds.has(detail.id)) return;
+
+    this.regenerateAttemptedIds.add(detail.id);
+    this.regeneratingIds.add(detail.id);
+    this.loading.set(true);
+    this.statusText.set('Gerando análise ...');
+    this.signalRService.clearStream();
+
+    try {
+      await this.signalRService.regenerateAnalysis(detail.id);
+    } catch (err) {
+      console.error('Falha ao regenerar análise órfã:', err);
+      this.loading.set(false);
+    } finally {
+      this.regeneratingIds.delete(detail.id);
+    }
+  }
+
+  private mapChatMessages(detail: AnaliseDetail): ChatMessageView[] {
+    return detail.mensagens
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => ({
+        id: m.id,
+        role: m.role as 'user' | 'assistant',
+        conteudo: m.conteudo,
+      }));
   }
 
   protected toggleSidebar(): void {

@@ -58,8 +58,26 @@ export class SignalRService {
     await this.hubConnection.invoke('SendChatMessage', analiseId, texto);
   }
 
+  /** Regenera o relatório inicial quando a análise existe sem mensagens no histórico. */
+  async regenerateAnalysis(analiseId: string): Promise<void> {
+    this.streamMessage.set('');
+    await this.ensureConnected();
+
+    if (this.hubConnection?.state !== signalR.HubConnectionState.Connected) {
+      throw new Error('Conexão SignalR não está ativa.');
+    }
+
+    await this.hubConnection.invoke('RegenerateAnalysis', analiseId);
+  }
+
   clearStream(): void {
     this.streamMessage.set('');
+  }
+
+  /** Limpa sinais de sessão (útil ao iniciar uma nova análise na UI). */
+  clearSession(): void {
+    this.streamMessage.set('');
+    this.analysisStarted.set(null);
   }
 
   private async startConnection(): Promise<void> {
