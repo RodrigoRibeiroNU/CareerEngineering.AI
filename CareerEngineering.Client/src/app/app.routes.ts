@@ -16,6 +16,12 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
   {
+    path: 'analise/:id',
+    component: DashboardComponent,
+    title: 'CareerEngineering.AI - Análise',
+    canActivate: [AuthGuard],
+  },
+  {
     path: '**',
     redirectTo: '',
   },

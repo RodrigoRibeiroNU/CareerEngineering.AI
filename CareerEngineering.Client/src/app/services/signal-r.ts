@@ -12,6 +12,7 @@ export class SignalRService {
 
   readonly streamMessage = signal('');
   readonly analysisComplete = signal(0);
+  readonly analysisStarted = signal<{ id: string; titulo: string } | null>(null);
 
   async ensureConnected(): Promise<void> {
     if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
@@ -36,6 +37,7 @@ export class SignalRService {
     userEmail: string,
   ): Promise<void> {
     this.streamMessage.set('');
+    this.analysisStarted.set(null);
     await this.ensureConnected();
 
     if (this.hubConnection?.state !== signalR.HubConnectionState.Connected) {
@@ -43,6 +45,21 @@ export class SignalRService {
     }
 
     await this.hubConnection.invoke('StartAnalysis', job, resume, userName, userEmail);
+  }
+
+  async sendChatMessage(analiseId: string, texto: string): Promise<void> {
+    this.streamMessage.set('');
+    await this.ensureConnected();
+
+    if (this.hubConnection?.state !== signalR.HubConnectionState.Connected) {
+      throw new Error('Conexão SignalR não está ativa.');
+    }
+
+    await this.hubConnection.invoke('SendChatMessage', analiseId, texto);
+  }
+
+  clearStream(): void {
+    this.streamMessage.set('');
   }
 
   private async startConnection(): Promise<void> {
@@ -76,7 +93,11 @@ export class SignalRService {
       this.streamMessage.update((prev) => prev + chunk);
     });
 
-    this.hubConnection.on('AnalysisCompleted', () => {
+    this.hubConnection.on('AnalysisStarted', (id: string, titulo: string) => {
+      this.analysisStarted.set({ id, titulo });
+    });
+
+    this.hubConnection.on('AnalysisCompleted', (_analiseId?: string | null) => {
       this.analysisComplete.update((n) => n + 1);
     });
 

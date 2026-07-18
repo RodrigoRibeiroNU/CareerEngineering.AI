@@ -1,0 +1,91 @@
+<aside
+  class="flex h-full flex-col border-r border-slate-800 bg-slate-950/95 transition-all duration-300"
+  [class.w-72]="!collapsed()"
+  [class.w-0]="collapsed()"
+  [class.overflow-hidden]="collapsed()">
+
+  <div class="flex items-center justify-between px-4 py-4 border-b border-slate-900 min-w-72">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Histórico</p>
+      <p class="text-sm text-slate-300 mt-0.5">Suas análises</p>
+    </div>
+    <a
+      routerLink="/analise"
+      class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-colors"
+      title="Nova análise">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
+    </a>
+  </div>
+
+  <div class="flex-1 overflow-y-auto min-w-72 px-2 py-2 space-y-1">
+    @if (loadingList()) {
+      <div class="px-3 py-4 space-y-3">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="h-12 rounded-xl bg-slate-900 animate-pulse"></div>
+        }
+      </div>
+    } @else if (analises().length === 0) {
+      <p class="px-3 py-6 text-sm text-slate-500 text-center leading-relaxed">
+        Nenhuma análise ainda.<br />Inicie uma nova à direita.
+      </p>
+    } @else {
+      @for (item of analises(); track item.id) {
+        <div class="group relative">
+          @if (renamingId() === item.id) {
+            <div class="px-2 py-1.5">
+              <input
+                #renameInput
+                [attr.data-id]="item.id"
+                [ngModel]="renameDraft()"
+                (ngModelChange)="renameDraft.set($event)"
+                (keydown.enter)="commitRename(item)"
+                (keydown.escape)="cancelRename()"
+                (blur)="commitRename(item)"
+                class="w-full rounded-lg border border-emerald-500/50 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none" />
+            </div>
+          } @else {
+            <a
+              [routerLink]="['/analise', item.id]"
+              routerLinkActive="bg-slate-900 border-slate-700"
+              class="flex items-start gap-2 rounded-xl border border-transparent px-3 py-2.5 hover:bg-slate-900/80 transition-colors">
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium text-slate-200 truncate">{{ item.titulo }}</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">{{ formatDate(item.dataCriacao) }}</p>
+              </div>
+
+              <button
+                type="button"
+                (click)="toggleMenu(item.id, $event)"
+                class="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded-md text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-all cursor-pointer"
+                title="Ações">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                </svg>
+              </button>
+            </a>
+          }
+
+          @if (openMenuId() === item.id) {
+            <div class="fixed inset-0 z-20" (click)="closeMenu()"></div>
+            <div class="absolute right-2 top-10 z-30 w-36 rounded-xl border border-slate-800 bg-slate-950 p-1 shadow-2xl">
+              <button
+                type="button"
+                (click)="startRename(item, $event)"
+                class="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-900 cursor-pointer">
+                Renomear
+              </button>
+              <button
+                type="button"
+                (click)="deleteItem(item, $event)"
+                class="w-full rounded-lg px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 cursor-pointer">
+                Excluir
+              </button>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</aside>
