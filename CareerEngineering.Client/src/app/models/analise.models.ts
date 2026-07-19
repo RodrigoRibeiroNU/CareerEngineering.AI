@@ -27,7 +27,7 @@ export interface AnaliseDetail {
 /** Mensagem exibida na UI (pode ser local/streaming). */
 export interface ChatMessageView {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   conteudo: string;
   streaming?: boolean;
 }

@@ -29,6 +29,8 @@ export class SidebarComponent {
   readonly deleted = output<string>();
   /** Solicita ao Dashboard resetar o formulário de nova análise. */
   readonly newAnalysis = output<void>();
+  /** Solicita abrir o formulário em modo edição com os dados da análise. */
+  readonly editAnalysis = output<string>();
   /** Emite ao selecionar um item — útil para fechar o drawer no mobile. */
   readonly navigated = output<void>();
 
@@ -47,6 +49,13 @@ export class SidebarComponent {
 
   protected onSelectItem(): void {
     this.navigated.emit();
+  }
+
+  protected startEdit(item: AnaliseListItem, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.openMenuId.set(null);
+    this.editAnalysis.emit(item.id);
   }
 
   protected startRename(item: AnaliseListItem, event: Event): void {

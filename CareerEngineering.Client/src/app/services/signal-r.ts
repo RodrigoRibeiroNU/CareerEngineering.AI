@@ -13,6 +13,7 @@ export class SignalRService {
   readonly streamMessage = signal('');
   readonly analysisComplete = signal(0);
   readonly analysisStarted = signal<{ id: string; titulo: string } | null>(null);
+  readonly analysisUpdated = signal<{ id: string; titulo: string } | null>(null);
 
   async ensureConnected(): Promise<void> {
     if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
@@ -70,6 +71,22 @@ export class SignalRService {
     await this.hubConnection.invoke('RegenerateAnalysis', analiseId);
   }
 
+  /**
+   * Atualiza vaga/currículo de uma análise existente e gera novo relatório
+   * preservando o histórico anterior no chat.
+   */
+  async updateAnalysis(analiseId: string, job: string, resume: string): Promise<void> {
+    this.streamMessage.set('');
+    this.analysisUpdated.set(null);
+    await this.ensureConnected();
+
+    if (this.hubConnection?.state !== signalR.HubConnectionState.Connected) {
+      throw new Error('Conexão SignalR não está ativa.');
+    }
+
+    await this.hubConnection.invoke('UpdateAnalysis', analiseId, job, resume);
+  }
+
   clearStream(): void {
     this.streamMessage.set('');
   }
@@ -78,6 +95,7 @@ export class SignalRService {
   clearSession(): void {
     this.streamMessage.set('');
     this.analysisStarted.set(null);
+    this.analysisUpdated.set(null);
   }
 
   private async startConnection(): Promise<void> {
@@ -113,6 +131,10 @@ export class SignalRService {
 
     this.hubConnection.on('AnalysisStarted', (id: string, titulo: string) => {
       this.analysisStarted.set({ id, titulo });
+    });
+
+    this.hubConnection.on('AnalysisUpdated', (id: string, titulo: string) => {
+      this.analysisUpdated.set({ id, titulo });
     });
 
     this.hubConnection.on('AnalysisCompleted', (_analiseId?: string | null) => {

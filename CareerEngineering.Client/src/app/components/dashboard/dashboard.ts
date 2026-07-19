@@ -39,12 +39,15 @@ export class DashboardComponent implements OnInit {
   private readonly scrollContainer = viewChild<ElementRef<HTMLDivElement>>('chatScroll');
 
   private lastHandledStartedId: string | null = null;
+  private lastHandledUpdatedId: string | null = null;
   private lastHandledComplete = 0;
   private loadingDetailId: string | null = null;
   /** Evita disparar RegenerateAnalysis em paralelo para o mesmo id. */
   private readonly regeneratingIds = new Set<string>();
   /** Uma tentativa de regeneração por análise nesta sessão (evita loop). */
   private readonly regenerateAttemptedIds = new Set<string>();
+  /** Evita que a navegação para /analise limpe o formulário durante o modo edição. */
+  private suppressFormReset = false;
 
   private readonly user = toSignal(this.auth.user$, { initialValue: null });
   /** No mobile inicia fechada (drawer); no desktop inicia aberta. */
@@ -62,6 +65,8 @@ export class DashboardComponent implements OnInit {
   protected readonly activeAnaliseId = signal<string | null>(null);
   protected readonly activeTitulo = signal<string | null>(null);
   protected readonly messages = signal<ChatMessageView[]>([]);
+  /** Id da análise em edição no formulário (null = modo criação). */
+  protected readonly editingAnaliseId = signal<string | null>(null);
 
   protected readonly streamPreview = computed(() => this.signalRService.streamMessage());
 
@@ -76,6 +81,7 @@ export class DashboardComponent implements OnInit {
       !this.loading(),
   );
 
+  protected readonly isEditMode = computed(() => !!this.editingAnaliseId());
   protected readonly isChatMode = computed(() => !!this.activeAnaliseId());
 
   constructor() {
@@ -96,6 +102,24 @@ export class DashboardComponent implements OnInit {
           modeloLLM: this.systemService.activeModel() || 'qwen2.5:14b',
         });
         void this.router.navigate(['/analise', started.id], { replaceUrl: true });
+      });
+    });
+
+    // Após UpdateAnalysis — só sincroniza título/sidebar (a UI já está no chat).
+    effect(() => {
+      const updated = this.signalRService.analysisUpdated();
+      if (!updated || updated.id === this.lastHandledUpdatedId) return;
+
+      this.lastHandledUpdatedId = updated.id;
+
+      untracked(() => {
+        this.activeTitulo.set(updated.titulo);
+        this.analisesService.upsertLocal({
+          id: updated.id,
+          titulo: updated.titulo,
+          dataCriacao: new Date().toISOString(),
+          modeloLLM: this.systemService.activeModel() || 'qwen2.5:14b',
+        });
       });
     });
 
@@ -132,7 +156,7 @@ export class DashboardComponent implements OnInit {
           msgs.map((m) => (m.streaming ? { ...m, streaming: false } : m)),
         );
         void this.analisesService.loadList();
-        // Sincroniza com o banco (cobre stream vazio / regeneração).
+        // Sincroniza com o banco (cobre stream vazio / regeneração / atualização).
         void this.syncActiveDetailAfterComplete();
       });
     });
@@ -154,12 +178,42 @@ export class DashboardComponent implements OnInit {
     void this.router.navigateByUrl('/analise');
   }
 
-  private resetToNewAnalysisForm(): void {
+  /** Menu "Editar": abre o formulário preenchido com vaga/currículo da análise. */
+  protected async onEditAnalysis(id: string): Promise<void> {
+    this.closeSidebarOnMobile();
+    this.suppressFormReset = true;
+
+    const detail = await this.analisesService.getById(id);
+    if (!detail) {
+      this.suppressFormReset = false;
+      return;
+    }
+
     this.loading.set(false);
     this.loadingDetailId = null;
     this.lastHandledStartedId = null;
     this.activeAnaliseId.set(null);
+    this.messages.set([]);
+    this.followUpText.set('');
+    this.signalRService.clearStream();
+
+    this.editingAnaliseId.set(detail.id);
+    this.activeTitulo.set(detail.titulo);
+    this.jobDescription.set(detail.descricaoVaga ?? '');
+    this.resumeText.set(detail.textoCurriculo ?? '');
+
+    await this.router.navigateByUrl('/analise');
+    this.suppressFormReset = false;
+  }
+
+  private resetToNewAnalysisForm(): void {
+    this.loading.set(false);
+    this.loadingDetailId = null;
+    this.lastHandledStartedId = null;
+    this.lastHandledUpdatedId = null;
+    this.activeAnaliseId.set(null);
     this.activeTitulo.set(null);
+    this.editingAnaliseId.set(null);
     this.messages.set([]);
     this.jobDescription.set('');
     this.resumeText.set('');
@@ -168,10 +222,12 @@ export class DashboardComponent implements OnInit {
   }
 
   private async onRouteIdChange(id: string | null): Promise<void> {
-    // Rota /analise (sem id) → formulário de nova análise.
+    // Rota /analise (sem id) → formulário de nova análise ou edição.
     if (!id) {
       // Evita limpar no meio do StartAnalysis: AnalysisStarted ainda não navegou para /:id.
       if (this.loading() && !this.activeAnaliseId()) return;
+      // Modo edição: mantém textareas populados.
+      if (this.suppressFormReset || this.editingAnaliseId()) return;
 
       this.resetToNewAnalysisForm();
       return;
@@ -186,6 +242,7 @@ export class DashboardComponent implements OnInit {
     if (this.loadingDetailId === id) return;
     this.loadingDetailId = id;
 
+    this.editingAnaliseId.set(null);
     this.activeAnaliseId.set(id);
     this.signalRService.clearStream();
 
@@ -264,10 +321,10 @@ export class DashboardComponent implements OnInit {
 
   private mapChatMessages(detail: AnaliseDetail): ChatMessageView[] {
     return detail.mensagens
-      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .filter((m) => m.role === 'user' || m.role === 'assistant' || m.role === 'system')
       .map((m) => ({
         id: m.id,
-        role: m.role as 'user' | 'assistant',
+        role: m.role as 'user' | 'assistant' | 'system',
         conteudo: m.conteudo,
       }));
   }
@@ -290,6 +347,12 @@ export class DashboardComponent implements OnInit {
   protected async analyze(): Promise<void> {
     if (!this.canSubmit() || this.loading()) return;
 
+    const editId = this.editingAnaliseId();
+    if (editId) {
+      await this.submitUpdate(editId);
+      return;
+    }
+
     this.loading.set(true);
     this.statusText.set('Conectando ao mentor e analisando...');
     this.messages.set([]);
@@ -306,6 +369,48 @@ export class DashboardComponent implements OnInit {
       );
     } catch (err) {
       console.error('Falha na análise via SignalR:', err);
+      this.loading.set(false);
+    }
+  }
+
+  /**
+   * Modo edição: volta ao chat com o histórico intacto e anexa o novo streaming
+   * após o aviso de atualização.
+   */
+  private async submitUpdate(analiseId: string): Promise<void> {
+    this.loading.set(true);
+    this.statusText.set('Atualizando análise com os novos dados...');
+    this.signalRService.clearStream();
+    this.lastHandledUpdatedId = null;
+
+    // Carrega histórico existente antes de sair do formulário.
+    const detail = await this.analisesService.getById(analiseId);
+    const historico = detail ? this.mapChatMessages(detail) : [];
+
+    this.editingAnaliseId.set(null);
+    this.activeAnaliseId.set(analiseId);
+    this.activeTitulo.set(detail?.titulo ?? this.activeTitulo());
+    this.messages.set([
+      ...historico,
+      {
+        id: `local-system-${Date.now()}`,
+        role: 'system',
+        conteudo:
+          '[Sistema: Os dados de Vaga/Currículo foram atualizados pelo usuário nesta etapa da sessão. Considere as novas definições para as próximas respostas]',
+      },
+    ]);
+    this.scrollToBottom();
+
+    void this.router.navigate(['/analise', analiseId], { replaceUrl: true });
+
+    try {
+      await this.signalRService.updateAnalysis(
+        analiseId,
+        this.jobDescription().trim(),
+        this.resumeText().trim(),
+      );
+    } catch (err) {
+      console.error('Falha ao atualizar análise via SignalR:', err);
       this.loading.set(false);
     }
   }
@@ -334,7 +439,8 @@ export class DashboardComponent implements OnInit {
   }
 
   protected onDeleted(id: string): void {
-    if (this.activeAnaliseId() === id) {
+    if (this.activeAnaliseId() === id || this.editingAnaliseId() === id) {
+      this.resetToNewAnalysisForm();
       void this.router.navigateByUrl('/analise');
     }
   }

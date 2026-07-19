@@ -76,7 +76,11 @@ public class CareerChatHub : Hub
             // Notifica o cliente cedo para navegar para /analise/:id e atualizar a Sidebar.
             await Clients.Caller.SendAsync("AnalysisStarted", analise.Id.ToString(), analise.Titulo);
 
-            await ExecutarGeracaoInicialAsync(analise.Id, analise.DescricaoVaga, analise.TextoCurriculo);
+            await ExecutarGeracaoInicialAsync(
+                analise.Id,
+                analise.DescricaoVaga,
+                analise.TextoCurriculo,
+                appendToHistory: false);
         }
         catch (Exception ex)
         {
@@ -90,6 +94,77 @@ public class CareerChatHub : Hub
         finally
         {
             await NotificarConclusaoAsync(analiseId);
+        }
+    }
+
+    private const string AvisoAtualizacaoDados = """
+        [Sistema: Os dados de Vaga/Currículo foram atualizados pelo usuário nesta etapa da sessão. Considere as novas definições para as próximas respostas]
+        """;
+
+    /// <summary>
+    /// Atualiza vaga/currículo, registra aviso no histórico (sem apagar mensagens anteriores)
+    /// e reexecuta o Generator-Refiner como continuação da linha do tempo do chat.
+    /// </summary>
+    public async Task UpdateAnalysis(string analiseId, string jobDescription, string resumeText)
+    {
+        Guid? parsedId = null;
+
+        try
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId)) return;
+
+            if (!Guid.TryParse(analiseId, out var id))
+            {
+                await Clients.Caller.SendAsync("ReceiveToken", "⚠️ Identificador de análise inválido.");
+                return;
+            }
+
+            parsedId = id;
+
+            if (string.IsNullOrWhiteSpace(jobDescription) || string.IsNullOrWhiteSpace(resumeText))
+            {
+                await Clients.Caller.SendAsync("ReceiveToken", "⚠️ Informe a descrição da vaga e o currículo.");
+                return;
+            }
+
+            var titulo = InferirTitulo(jobDescription);
+            var analise = await _analiseService.AtualizarDadosAsync(
+                id,
+                userId,
+                jobDescription.Trim(),
+                resumeText.Trim(),
+                titulo);
+
+            if (analise is null)
+            {
+                await Clients.Caller.SendAsync("ReceiveToken", "⚠️ Análise não encontrada ou sem permissão.");
+                return;
+            }
+
+            // Ponte de contexto na linha do tempo — histórico anterior permanece intacto.
+            await _analiseService.AdicionarMensagemAsync(analise.Id, "system", AvisoAtualizacaoDados.Trim());
+
+            await Clients.Caller.SendAsync("AnalysisUpdated", analise.Id.ToString(), analise.Titulo);
+
+            await ExecutarGeracaoInicialAsync(
+                analise.Id,
+                analise.DescricaoVaga,
+                analise.TextoCurriculo,
+                appendToHistory: true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha em UpdateAnalysis. AnaliseId={AnaliseId}", analiseId);
+            const string erroMsg =
+                "⚠️ Ocorreu um erro ao atualizar a análise. Tente novamente em instantes.";
+            await Clients.Caller.SendAsync("ReceiveToken", $"\n\n{erroMsg}");
+            if (parsedId is Guid id)
+                await _analiseService.AdicionarMensagemAsync(id, "assistant", erroMsg);
+        }
+        finally
+        {
+            await NotificarConclusaoAsync(parsedId);
         }
     }
 
@@ -152,7 +227,8 @@ public class CareerChatHub : Hub
             await ExecutarGeracaoInicialAsync(
                 analise.Id,
                 analise.DescricaoVaga,
-                analise.TextoCurriculo);
+                analise.TextoCurriculo,
+                appendToHistory: false);
         }
         catch (Exception ex)
         {
@@ -171,11 +247,16 @@ public class CareerChatHub : Hub
         }
     }
 
-    /// <summary>Generator-Refiner compartilhado por StartAnalysis e RegenerateAnalysis.</summary>
+    /// <summary>
+    /// Generator-Refiner compartilhado por Start/Regenerate/Update.
+    /// Quando <paramref name="appendToHistory"/> é true, a resposta é sempre anexada
+    /// (modo atualização — preserva mensagens anteriores).
+    /// </summary>
     private async Task ExecutarGeracaoInicialAsync(
         Guid analiseId,
         string jobDescription,
-        string resumeText)
+        string resumeText,
+        bool appendToHistory)
     {
         var chatService = _kernel.GetRequiredService<IChatCompletionService>();
         var gapsExtraidos = await ExtrairGapsAsync(chatService, jobDescription, resumeText);
@@ -183,7 +264,7 @@ public class CareerChatHub : Hub
         {
             const string timeoutMsg =
                 "⚠️ O modelo local demorou muito para responder devido ao limite de hardware. Por favor, tente novamente ou verifique se os textos são válidos.";
-            await PersistirMensagemAssistenteSeVazioAsync(analiseId, timeoutMsg);
+            await PersistirMensagemAssistenteAsync(analiseId, timeoutMsg, appendToHistory);
             return;
         }
 
@@ -192,7 +273,7 @@ public class CareerChatHub : Hub
             const string aviso =
                 "⚠️ **Análise Inviável**: O currículo enviado não possui nenhuma aderência ou correlação com a área da vaga fornecida.";
             await Clients.Caller.SendAsync("ReceiveToken", aviso);
-            await PersistirMensagemAssistenteSeVazioAsync(analiseId, aviso);
+            await PersistirMensagemAssistenteAsync(analiseId, aviso, appendToHistory);
             return;
         }
 
@@ -201,22 +282,32 @@ public class CareerChatHub : Hub
         if (!string.IsNullOrWhiteSpace(resultadoCompleto) &&
             !resultadoCompleto.Contains("⚠️ Por favor, forneça uma descrição de vaga"))
         {
-            await PersistirMensagemAssistenteSeVazioAsync(analiseId, resultadoCompleto);
+            await PersistirMensagemAssistenteAsync(analiseId, resultadoCompleto, appendToHistory);
             return;
         }
 
         const string vazioMsg =
             "⚠️ A análise não gerou conteúdo utilizável. Reabra esta sessão para tentar novamente.";
         await Clients.Caller.SendAsync("ReceiveToken", vazioMsg);
-        await PersistirMensagemAssistenteSeVazioAsync(analiseId, vazioMsg);
+        await PersistirMensagemAssistenteAsync(analiseId, vazioMsg, appendToHistory);
+    }
+
+    /// <summary>
+    /// Persiste resposta do assistente. Em criação/órfã: só se o histórico ainda estiver vazio.
+    /// Em atualização (<paramref name="forceAppend"/>): sempre anexa à linha do tempo.
+    /// </summary>
+    private async Task PersistirMensagemAssistenteAsync(
+        Guid analiseId,
+        string conteudo,
+        bool forceAppend)
+    {
+        if (!forceAppend && await _analiseService.ContarMensagensAsync(analiseId) > 0) return;
+        await _analiseService.AdicionarMensagemAsync(analiseId, "assistant", conteudo);
     }
 
     /// <summary>Evita duplicar a 1ª mensagem se outra chamada já persistiu algo.</summary>
-    private async Task PersistirMensagemAssistenteSeVazioAsync(Guid analiseId, string conteudo)
-    {
-        if (await _analiseService.ContarMensagensAsync(analiseId) > 0) return;
-        await _analiseService.AdicionarMensagemAsync(analiseId, "assistant", conteudo);
-    }
+    private async Task PersistirMensagemAssistenteSeVazioAsync(Guid analiseId, string conteudo) =>
+        await PersistirMensagemAssistenteAsync(analiseId, conteudo, forceAppend: false);
 
     /// <summary>
     /// Continuação multi-turno com guardrails: âncora de personagem, sliding window (4 msgs)
@@ -492,6 +583,7 @@ public class CareerChatHub : Hub
             """);
 
         // 3) Sliding window: só as N últimas mensagens (mais antigas ficam só no banco).
+        //    Mensagens "system" (ex.: aviso de atualização de vaga/currículo) entram como ponte de contexto.
         foreach (var msg in mensagens)
         {
             switch (msg.Role.ToLowerInvariant())
@@ -502,7 +594,9 @@ public class CareerChatHub : Hub
                 case "assistant":
                     historico.AddAssistantMessage(msg.Conteudo);
                     break;
-                // Mensagens "system" do histórico persistido não entram — a âncora já foi injetada.
+                case "system":
+                    historico.AddSystemMessage(msg.Conteudo);
+                    break;
             }
         }
 

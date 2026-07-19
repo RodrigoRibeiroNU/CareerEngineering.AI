@@ -73,6 +73,12 @@
             <div class="absolute right-2 top-10 z-30 w-36 rounded-xl border border-slate-800 bg-slate-950 p-1 shadow-2xl">
               <button
                 type="button"
+                (click)="startEdit(item, $event)"
+                class="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-900 cursor-pointer">
+                Editar
+              </button>
+              <button
+                type="button"
                 (click)="startRename(item, $event)"
                 class="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-900 cursor-pointer">
                 Renomear

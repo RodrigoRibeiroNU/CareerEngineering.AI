@@ -15,6 +15,7 @@
       [collapsed]="sidebarCollapsed()"
       (deleted)="onDeleted($event)"
       (newAnalysis)="startNewAnalysis()"
+      (editAnalysis)="onEditAnalysis($event)"
       (navigated)="closeSidebarOnMobile()" />
 
     <main class="flex-1 min-w-0 min-h-0 overflow-y-auto flex flex-col md:flex-1">
@@ -53,7 +54,7 @@
               @if (loading()) {
                 <span class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full"></span>
               }
-              Analisar gap
+              {{ isEditMode() ? 'Atualizar análise' : 'Analisar gap' }}
             </button>
           </div>
         </div>
@@ -68,28 +69,36 @@
             }
 
             @for (msg of messages(); track msg.id) {
-              <div
-                class="flex"
-                [class.justify-end]="msg.role === 'user'"
-                [class.justify-start]="msg.role === 'assistant'">
-                <div
-                  class="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"
-                  [class.bg-emerald-500]="msg.role === 'user'"
-                  [class.text-slate-950]="msg.role === 'user'"
-                  [class.bg-slate-900]="msg.role === 'assistant'"
-                  [class.border]="msg.role === 'assistant'"
-                  [class.border-slate-800]="msg.role === 'assistant'"
-                  [class.text-slate-200]="msg.role === 'assistant'">
-                  {{ msg.conteudo }}
-                  @if (msg.streaming) {
-                    <span class="inline-block w-1.5 h-4 ml-1 bg-emerald-400 animate-pulse align-middle"></span>
-                  }
+              @if (msg.role === 'system') {
+                <div class="flex justify-center">
+                  <p class="max-w-[90%] rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 text-center text-xs leading-relaxed text-amber-200/90">
+                    {{ msg.conteudo }}
+                  </p>
                 </div>
-              </div>
+              } @else {
+                <div
+                  class="flex"
+                  [class.justify-end]="msg.role === 'user'"
+                  [class.justify-start]="msg.role === 'assistant'">
+                  <div
+                    class="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"
+                    [class.bg-emerald-500]="msg.role === 'user'"
+                    [class.text-slate-950]="msg.role === 'user'"
+                    [class.bg-slate-900]="msg.role === 'assistant'"
+                    [class.border]="msg.role === 'assistant'"
+                    [class.border-slate-800]="msg.role === 'assistant'"
+                    [class.text-slate-200]="msg.role === 'assistant'">
+                    {{ msg.conteudo }}
+                    @if (msg.streaming) {
+                      <span class="inline-block w-1.5 h-4 ml-1 bg-emerald-400 animate-pulse align-middle"></span>
+                    }
+                  </div>
+                </div>
+              }
             }
 
-            @if (loading() && messages().length === 0) {
-              <p class="text-sm text-blue-300 animate-pulse">{{ statusText() }}</p>
+            @if (loading() && !messages().some(m => m.streaming)) {
+              <p class="text-sm text-blue-300 animate-pulse text-center">{{ statusText() }}</p>
             }
           </div>
 

@@ -31,5 +31,15 @@ public interface IAnaliseService
 
     Task<bool> AtualizarTituloAsync(Guid id, string usuarioId, string novoTitulo);
 
+    /// <summary>
+    /// Atualiza vaga/currículo (e opcionalmente o título) sem apagar o histórico de mensagens.
+    /// </summary>
+    Task<Analise?> AtualizarDadosAsync(
+        Guid id,
+        string usuarioId,
+        string descricaoVaga,
+        string textoCurriculo,
+        string? novoTitulo = null);
+
     Task<bool> ExcluirAsync(Guid id, string usuarioId);
 }

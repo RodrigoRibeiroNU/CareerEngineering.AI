@@ -142,6 +142,25 @@ public class AnaliseService : IAnaliseService
         return true;
     }
 
+    public async Task<Analise?> AtualizarDadosAsync(
+        Guid id,
+        string usuarioId,
+        string descricaoVaga,
+        string textoCurriculo,
+        string? novoTitulo = null)
+    {
+        var analise = await ObterEntidadeDoUsuarioAsync(id, usuarioId);
+        if (analise is null) return null;
+
+        analise.DescricaoVaga = descricaoVaga;
+        analise.TextoCurriculo = textoCurriculo;
+        if (!string.IsNullOrWhiteSpace(novoTitulo))
+            analise.Titulo = Truncate(novoTitulo.Trim(), 150);
+
+        await _context.SaveChangesAsync();
+        return analise;
+    }
+
     public async Task<bool> ExcluirAsync(Guid id, string usuarioId)
     {
         var analise = await ObterEntidadeDoUsuarioAsync(id, usuarioId);
