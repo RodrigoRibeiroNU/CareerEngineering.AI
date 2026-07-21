@@ -61,7 +61,7 @@ O projeto encontra-se em estágio avançado de maturidade de sua fundação crí
 - [x] **Expansão Conversacional Multi-turno (Fase 5):** Chat contínuo com histórico estruturado, sliding window e guardrails de personagem no prompt.
 - [x] **Fase 6 (Parser Físico de Documentos):** Extração client-side de `.pdf` / `.docx` / `.txt` (`DocumentParserService`), toolbar de importação/copiar/colar/limpar, drag & drop e feedback por toast.
 - [x] **Atalhos de Teclado no Chat:** `Enter` para enviar; `Ctrl+Enter` / `Shift+Enter` para quebra de linha.
-- [ ] **Fase 7 (Renderização Rica):** Parser Markdown no Angular para renderizar as seções do Refinador, substituindo `whitespace-pre-wrap`.
+- [x] **Fase 7 (Renderização Rica):** Parser Markdown (`ngx-markdown` + `marked`) no chat do Dashboard para renderizar as seções do Refinador e respostas do assistente, com tipografia alinhada ao tema escuro e atualização reativa no streaming SignalR.
 - [ ] **Fase 8 (Configurações de Produção):** Desacoplar URLs localhost com `environment.ts` no Angular e variáveis de ambiente no .NET.
 - [ ] **Faxina de Código Depreciado:** Remoção do serviço obsoleto `CareerMentorService` e do componente órfão `AnalysisResultComponent`.
 

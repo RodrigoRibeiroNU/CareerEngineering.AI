@@ -69,14 +69,18 @@
                   [class.justify-end]="msg.role === 'user'"
                   [class.justify-start]="msg.role === 'assistant'">
                   <div
-                    class="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"
+                    class="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
                     [class.bg-emerald-500]="msg.role === 'user'"
                     [class.text-slate-950]="msg.role === 'user'"
                     [class.bg-slate-900]="msg.role === 'assistant'"
                     [class.border]="msg.role === 'assistant'"
                     [class.border-slate-800]="msg.role === 'assistant'"
                     [class.text-slate-200]="msg.role === 'assistant'">
-                    {{ msg.conteudo }}
+                    @if (msg.role === 'assistant') {
+                      <markdown class="markdown-body" [data]="msg.conteudo"></markdown>
+                    } @else {
+                      <span class="whitespace-pre-wrap">{{ msg.conteudo }}</span>
+                    }
                     @if (msg.streaming) {
                       <span class="inline-block w-1.5 h-4 ml-1 bg-emerald-400 animate-pulse align-middle"></span>
                     }

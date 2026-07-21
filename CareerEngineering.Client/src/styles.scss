@@ -1,5 +1,94 @@
 @use "tailwindcss";
 
+/* Renderização rica de Markdown (respostas do assistente / gap analysis) */
+.markdown-body {
+  @apply text-slate-200 leading-relaxed;
+
+  :where(h1, h2, h3) {
+    @apply font-bold mt-4 mb-2 first:mt-0;
+  }
+
+  h1 {
+    @apply text-xl text-emerald-400;
+  }
+
+  h2 {
+    @apply text-lg text-emerald-400;
+  }
+
+  h3 {
+    @apply text-base text-slate-100;
+  }
+
+  p {
+    @apply my-2 first:mt-0 last:mb-0;
+  }
+
+  strong,
+  b {
+    @apply font-bold text-white;
+  }
+
+  em,
+  i {
+    @apply italic text-white;
+  }
+
+  ul {
+    @apply list-disc pl-5 my-2 space-y-1;
+  }
+
+  ol {
+    @apply list-decimal pl-5 my-2 space-y-1;
+  }
+
+  li {
+    @apply text-slate-200;
+  }
+
+  /* Inline code */
+  :not(pre) > code {
+    @apply bg-slate-800 text-emerald-300 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+
+  pre {
+    @apply bg-slate-800 rounded-lg p-3 my-3 overflow-x-auto;
+
+    code {
+      @apply bg-transparent p-0 text-emerald-300 text-sm font-mono;
+    }
+  }
+
+  blockquote {
+    @apply border-l-4 border-emerald-500 bg-slate-800/50 p-3 rounded-r text-slate-300 my-3;
+  }
+
+  table {
+    @apply w-full border-collapse my-3 text-sm;
+  }
+
+  th,
+  td {
+    @apply border border-slate-700 px-3 py-2;
+  }
+
+  th {
+    @apply bg-slate-800 text-slate-100 font-semibold;
+  }
+
+  td {
+    @apply text-slate-300;
+  }
+
+  a {
+    @apply text-emerald-400 underline underline-offset-2 hover:text-emerald-300;
+  }
+
+  hr {
+    @apply border-slate-700 my-4;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

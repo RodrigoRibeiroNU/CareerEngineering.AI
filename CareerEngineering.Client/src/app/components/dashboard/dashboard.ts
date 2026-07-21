@@ -14,6 +14,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '@auth0/auth0-angular';
 import { FormsModule } from '@angular/forms';
+import { MarkdownComponent } from 'ngx-markdown';
 import { AnalisesService } from '../../services/analises';
 import { SignalRService } from '../../services/signal-r';
 import { SystemService } from '../../services/system';
@@ -25,7 +26,7 @@ import { AnaliseDetail, ChatMessageView } from '../../models/analise.models';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, NavbarComponent, SidebarComponent, DocumentFieldComponent],
+  imports: [FormsModule, MarkdownComponent, NavbarComponent, SidebarComponent, DocumentFieldComponent],
   templateUrl: './dashboard.html',
 })
 export class DashboardComponent implements OnInit {
