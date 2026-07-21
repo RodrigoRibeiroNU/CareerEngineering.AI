@@ -17,6 +17,7 @@ import { FormsModule } from '@angular/forms';
 import { AnalisesService } from '../../services/analises';
 import { SignalRService } from '../../services/signal-r';
 import { SystemService } from '../../services/system';
+import { DocumentFieldComponent } from '../document-field/document-field';
 import { NavbarComponent } from '../navbar/navbar';
 import { SidebarComponent } from '../sidebar/sidebar';
 import { AnaliseDetail, ChatMessageView } from '../../models/analise.models';
@@ -24,7 +25,7 @@ import { AnaliseDetail, ChatMessageView } from '../../models/analise.models';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, NavbarComponent, SidebarComponent],
+  imports: [FormsModule, NavbarComponent, SidebarComponent, DocumentFieldComponent],
   templateUrl: './dashboard.html',
 })
 export class DashboardComponent implements OnInit {
@@ -412,6 +413,23 @@ export class DashboardComponent implements OnInit {
     } catch (err) {
       console.error('Falha ao atualizar análise via SignalR:', err);
       this.loading.set(false);
+    }
+  }
+
+  /**
+   * Enter envia a mensagem; Ctrl+Enter / Shift+Enter inserem nova linha.
+   */
+  protected onEnterPressed(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+
+    if (keyboardEvent.ctrlKey || keyboardEvent.shiftKey || keyboardEvent.metaKey) {
+      return;
+    }
+
+    keyboardEvent.preventDefault();
+
+    if (this.canSendFollowUp()) {
+      void this.sendFollowUp();
     }
   }
 

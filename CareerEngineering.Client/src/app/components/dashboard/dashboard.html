@@ -23,29 +23,17 @@
         <!-- Formulário de nova análise -->
         <div class="w-full px-4 pt-4 pb-6 sm:px-6 lg:px-8 flex-1 flex flex-col min-h-0">
           <div class="max-w-5xl w-full mx-auto flex flex-col gap-6 flex-1 min-h-0">
-            <div class="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl flex-1 min-h-[200px] max-h-[42vh]">
-              <label class="text-sm font-semibold text-slate-200 mb-2 flex items-center gap-2 flex-shrink-0">
-                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                Descrição da Vaga
-              </label>
-              <textarea
-                [ngModel]="jobDescription()"
-                (ngModelChange)="jobDescription.set($event)"
-                placeholder="Cole aqui os requisitos da vaga..."
-                class="w-full flex-1 min-h-0 p-4 bg-slate-950 text-slate-200 border border-slate-800 rounded-xl resize-none focus:outline-none focus:border-emerald-500 transition-colors text-sm leading-relaxed"></textarea>
-            </div>
+            <app-document-field
+              class="min-h-[200px] max-h-[42vh]"
+              label="Descrição da Vaga"
+              placeholder="Cole aqui os requisitos da vaga ou importe um arquivo..."
+              [(text)]="jobDescription" />
 
-            <div class="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl flex-1 min-h-[200px] max-h-[42vh]">
-              <label class="text-sm font-semibold text-slate-200 mb-2 flex items-center gap-2 flex-shrink-0">
-                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                Seu Currículo
-              </label>
-              <textarea
-                [ngModel]="resumeText()"
-                (ngModelChange)="resumeText.set($event)"
-                placeholder="Cole aqui o texto do seu currículo..."
-                class="w-full flex-1 min-h-0 p-4 bg-slate-950 text-slate-200 border border-slate-800 rounded-xl resize-none focus:outline-none focus:border-emerald-500 transition-colors text-sm leading-relaxed"></textarea>
-            </div>
+            <app-document-field
+              class="min-h-[200px] max-h-[42vh]"
+              label="Seu Currículo"
+              placeholder="Cole aqui o texto do seu currículo ou importe um arquivo..."
+              [(text)]="resumeText" />
 
             <button
               (click)="analyze()"
@@ -102,24 +90,30 @@
             }
           </div>
 
-          <form
-            (ngSubmit)="sendFollowUp()"
-            class="flex-shrink-0 flex items-end gap-3 border-t border-slate-900 pt-4">
-            <textarea
-              [ngModel]="followUpText()"
-              (ngModelChange)="followUpText.set($event)"
-              name="followUp"
-              rows="2"
-              placeholder="Pergunte sobre os gaps, um plano de estudos, priorização..."
-              [disabled]="loading()"
-              class="flex-1 resize-none rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-50"></textarea>
-            <button
-              type="submit"
-              [disabled]="!canSendFollowUp()"
-              class="h-11 px-5 rounded-xl bg-emerald-500 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-40 transition-colors cursor-pointer flex-shrink-0">
-              Enviar
-            </button>
-          </form>
+          <div class="flex-shrink-0 border-t border-slate-900 pt-4">
+            <form
+              (ngSubmit)="sendFollowUp()"
+              class="flex items-end gap-3">
+              <textarea
+                [ngModel]="followUpText()"
+                (ngModelChange)="followUpText.set($event)"
+                (keydown.enter)="onEnterPressed($event)"
+                name="followUp"
+                rows="2"
+                placeholder="Pergunte sobre os gaps, um plano de estudos, priorização..."
+                [disabled]="loading()"
+                class="flex-1 resize-none rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-50"></textarea>
+              <button
+                type="submit"
+                [disabled]="!canSendFollowUp()"
+                class="h-11 px-5 rounded-xl bg-emerald-500 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-40 transition-colors cursor-pointer flex-shrink-0">
+                Enviar
+              </button>
+            </form>
+            <p class="mt-2 text-[11px] text-slate-600">
+              Pressione Enter para enviar · Ctrl + Enter ou Shift + Enter para quebrar linha
+            </p>
+          </div>
         </div>
       }
     </main>
