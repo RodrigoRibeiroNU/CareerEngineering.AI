@@ -6,45 +6,57 @@
 [![Semantic Kernel](https://img.shields.io/badge/AI--Powered-Semantic%20Kernel-blue.svg)](https://learn.microsoft.com/en-us/semantic-kernel/)
 [![Auth0](https://img.shields.io/badge/Auth-Auth0-orange.svg)](https://auth0.com/)
 
-O **CareerEngineering.AI** é um ecossistema inteligente de alta performance projetado para realizar análise automatizada e minuciosa de aderência profissional (Gap Analysis). O sistema confronta os requisitos técnicos de uma vaga de TI contra o perfil de um candidato, mapeando de forma precisa lacunas de competências divididas em Ferramentas, Metodologias e Certificações.
+O **CareerEngineering.AI** é um ecossistema inteligente de alta performance projetado para realizar análise automatizada e minuciosa de aderência profissional (Gap Analysis) combinada com um mentor de IA conversacional. O sistema confronta os requisitos técnicos de uma vaga de TI contra o perfil de um candidato, mapeando de forma precisa lacunas de competências divididas em Ferramentas, Metodologias e Certificações.
 
-**Diferencial Arquitetural:** O motor de inteligência opera em duplo estágio por meio de modelos *Open-Source* rodando **100% localmente via Ollama**, garantindo privacidade total dos dados sensíveis do currículo e custo zero de inferência. A entrega do resultado é feita em tempo real através de uma arquitetura orientada a eventos e streaming de tokens.
+**Diferencial Arquitetural:** O motor de inteligência opera por meio de modelos *Open-Source* rodando **100% localmente via Ollama**, garantindo privacidade total dos dados sensíveis do currículo e custo zero de inferência. A entrega do resultado é feita em tempo real através de uma arquitetura orientada a eventos, streaming de tokens por WebSockets e persistência relacional completa de sessões.
 
 ---
 
 ## 🏗️ Arquitetura e Engenharia de Software Realizada
 
-O sistema está estruturado em um modelo desacoplado, utilizando tecnologias modernas de comunicação assíncrona, resistência relacional e controle rigoroso de ciclo de vida de tokens de IA.
+O sistema está estruturado em uma arquitetura desacoplada e robusta, suportando gerenciamento de sessões de chat, persistência em banco relacional e controle rigoroso de ciclo de vida de tokens de IA.
 
 ### 🖥️ Backend (.NET 10 & SignalR)
 * **Orquestração GenAI Local (Semantic Kernel):** Consumo do modelo local via SDK oficial da Microsoft, permitindo isolamento de prompts e controle fino de hiperparâmetros.
-* **Pipeline de Engenharia de Prompt em Duplo Estágio (Generator-Refiner):** 1. **Estágio 1 (Extrator Bruto):** Avaliação analítica fria a nível de dicionário. Se o input do currículo for completamente desalinhado com a vaga, o pipeline dispara um gatilho de saída antecipada (`DIVERGENTE`), poupando hardware.
-  2. **Estágio 2 (Refinador Consultivo):** Transforma a lista seca em um feedback amigável estruturado rigidamente em 3 seções Markdown.
-* **Filtros Defensivos & Guilhotina de Tokens:** Implementação no `CareerChatHub.cs` utilizando penalidades de presença/frequência (`PresencePenalty`/`FrequencyPenalty`) e uma trava lógica via C# que monitora o stream e corta a conexão imediatamente após a seção de Certificações, eliminando repetições ou saudações redundantes do modelo.
-* **Resiliência de Hardware:** Controle de timeout assíncrono limitando a requisição do primeiro estágio a **45 segundos** via `CancellationToken`, evitando travamentos por estrangulamento de memória RAM/VRAM.
-* **Streaming por WebSockets:** Centralização do fluxo produtivo no Hub SignalR (`/careerChatHub`), transmitindo pedaços de texto em tempo real com suporte a credenciais e CORS restrito a ambiente local seguro (`http://localhost:4200`).
-* **Persistência de Auditoria (Write-Only):** Conclusão do stream dispara o salvamento em banco relacional (SQL Server) através do Entity Framework Core, registrando a entidade `Usuario` e a respectiva `Analise` vinculada (ignorado no caso de saída por divergência).
+* **Pipeline de Engenharia de Prompt em Duplo Estágio (Generator-Refiner):**
+  1. **Estágio 1 (Extrator Bruto):** Avaliação analítica a nível de dicionário. Se o input do currículo for completamente desalinhado com a vaga, o pipeline dispara um gatilho de saída antecipada (`DIVERGENTE`), poupando hardware.
+  2. **Estágio 2 (Refinador Consultivo):** Transforma a lista seca em um feedback estruturado rigidamente em 3 seções Markdown.
+* **Streaming por WebSockets (SignalR):** Hub centralizado em `/careerChatHub` transmite tokens em tempo real (`StartAnalysis`). A autenticação do hub usa JWT via query string (`access_token`), com CORS restrito a `http://localhost:4200`.
+* **Chat Multi-Turno & Defesas de Escopo:** Conversações continuadas na sessão ativa (`SendChatMessage`). Há um prompt âncora de personagem (Guardrails) reinjetado a cada turno; tentativas de fora de escopo/jailbreak são registradas em log (auditoria) e o modelo é orientado a recusar. `PresencePenalty`/`FrequencyPenalty` reduzem loops de repetição.
+* **Atualização e Regeneração de Sessão:** `UpdateAnalysis` reexecuta o pipeline após editar vaga/currículo (preservando histórico e registrando aviso `system`). `RegenerateAnalysis` reprocessa análises órfãs sem mensagens.
+* **Mecanismo de Sliding Window:** Para não estourar a memória (VRAM/RAM) do hardware local, o sistema mantém fixo o contexto âncora (Vaga/Currículo) e envia apenas as últimas 4 mensagens da sessão para o Ollama.
+* **Gerenciamento Completo de Sessões (CRUD REST):** Endpoints HTTP protegidos via JWT fornecem listagem leve (`GET /api/analises`), detalhamento completo (`GET /api/analises/{id}`), renomeação de títulos (`PATCH .../title`) e deleção em cascata (`DELETE`).
+* **Rotas do Sistema:** Endpoint `GET /api/System/active-model` expõe o `ModelId` configurado no Semantic Kernel (usado pelo badge da navbar).
+* **Resiliência de Hardware:** Timeout assíncrono de **45 segundos** no primeiro estágio via `CancellationToken`, evitando travamentos por estrangulamento de RAM/VRAM. Guilhotina sintática corta o stream após a seção de Certificações.
+* **Persistência Relacional Integrada (EF Core + SQL Server):** Mapeamento 1:N entre `Analises` (cabeçalho pesado de vaga/currículo) e `MensagensHistorico` (turnos do usuário e do assistente).
+* **Documentação Técnica:** OpenAPI e Scalar expostos em ambiente de Development.
+
 ### 🎨 Frontend Reativo (Angular 22)
-* **Controle de Estado Moderno (Angular Signals):** Gestão reativa de estados de tela (Gatilhos de carregamento como *"Conectando ao mentor e analisando..."*, exibição de perfis e fluxos de erro).
-* **Streaming Consumer (RxJS):** Ingestão contínua do fluxo de tokens do SignalR com efeito de digitação em tempo real.
-* **Interface Restrita e Autenticada:** Fluxo estruturado contendo uma **Landing Page pública** e uma **Rota Protegida (`/analise`)** blindada por um `AuthGuard` nativo do Auth0.
-* **Gestão de Perfil na UI:** Componente de dashboard integrado com o Auth0 para exibição de avatar do usuário logado, dropdown de controle e gatilho de logout.
-* **Design Visual:** Interface construída com Tailwind CSS 4, adotando um tema escuro customizado baseado na paleta *emerald*.
+* **Controle de Estado Moderno (Angular Signals):** Gestão reativa de carregamento, listagem/mutação de sessões e consumo do stream SignalR.
+* **Estrutura de Casca (Layout Shell):**
+  * `NavbarComponent`: badge do modelo LLM ativo e dropdown de perfil/logout Auth0.
+  * `SidebarComponent`: histórico cronológico com exclusão rápida e renomeação inline com update otimista.
+* **Responsividade:** A Sidebar vira gaveteiro flutuante (overlay drawer) em telas menores (`md` para baixo), sem comprimir a área do chat.
+* **Alternação Form vs Chat:** Painel central alterna entre formulário de preenchimento (`max-w-5xl`, alinhado à Landing) e janela de chat com streaming em tempo real.
+* **Edição Contínua:** Reedição de vaga/currículo via `UpdateAnalysis`, registrando a transição como evento no chat sem limpar o histórico.
+* **Segurança Baseada em Provedor:** Landing pública e rotas protegidas (`/analise` e `/analise/:id`) com `AuthGuard` Auth0. Interceptor HTTP injeta JWT nas requisições REST (`/api/*`); o SignalR usa `accessTokenFactory` na conexão do hub.
 
 ---
 
 ## 🛠️ Status do Roadmap de Desenvolvimento
 
-O projeto encontra-se em estágio avançado de maturidade de sua fundação crítica, possuindo algumas features legadas e módulos futuros bem definidos:
+O projeto encontra-se em estágio avançado de maturidade de sua fundação crítica, com módulos futuros bem definidos:
 
 - [x] **Infraestrutura Básica de IA:** Configuração do Ollama local e homologação do modelo estável **Qwen 2.5 14B Instruct (Q4_K_M)**.
 - [x] **Fundação de Interface:** Landing page pública, Dashboard de análise em Angular 22 e componentização reativa via Signals.
-- [x] **Segurança:** Integração completa com **Auth0** para autenticação JWT e repasse de *access token* via query string na conexão do SignalR.
-- [x] **Pipeline de Análise Inteligente:** Mecanismo *Generator-Refiner* em C#, controle de timeout de hardware, saída rápida para dados divergentes e guilhotina sintática de strings.
-- [x] **Persistência do Resultado:** Modelagem de dados EF Core (SQL Server) salvando relatórios pós-streaming de forma automática.
-- [ ] **Fase 3 (Upload Automático):** Implementação do parser físico para extração de textos diretamente de arquivos `.pdf` ou `.docx` (Pendente).
-- [ ] **Fase 4 (Leitura de Históricos):** Criação de endpoints de consulta na API e componentes visuais de listagem na UI para ler os relatórios persistidos no banco de dados (Atualmente a escrita é consolidada, mas a leitura é inexistente na interface).
-- [ ] **Fase 5 (Expansão Conversacional):** Evolução do fluxo de análise *One-Shot* atual para um assistente de chat multi-turno contínuo com histórico mantido em sessão (Visão de Produto).
+- [x] **Segurança:** Integração com **Auth0** (JWT no REST e no hub SignalR). No tenant de desenvolvimento, a aplicação opera com login social Google (configuração do Auth0, não do código).
+- [x] **Pipeline de Análise Inteligente:** Mecanismo *Generator-Refiner* em C#, timeout de hardware, saída rápida para dados divergentes e guilhotina sintática de strings.
+- [x] **Leitura e Gestão de Históricos (Fase 4):** Persistência no SQL Server exposta via API REST e listada dinamicamente na sidebar.
+- [x] **Expansão Conversacional Multi-turno (Fase 5):** Chat contínuo com histórico estruturado, sliding window e guardrails de personagem no prompt.
+- [ ] **Fase 6 (Parser Físico de Documentos):** Upload e extração de texto de `.pdf`, `.docx` ou `.txt` via parser no client-side.
+- [ ] **Fase 7 (Renderização Rica):** Parser Markdown no Angular para renderizar as seções do Refinador, substituindo `whitespace-pre-wrap`.
+- [ ] **Fase 8 (Configurações de Produção):** Desacoplar URLs localhost com `environment.ts` no Angular e variáveis de ambiente no .NET.
+- [ ] **Faxina de Código Depreciado:** Remoção do serviço obsoleto `CareerMentorService` e do componente órfão `AnalysisResultComponent`.
 
 ---
 
@@ -55,7 +67,7 @@ Diferente de aplicações web tradicionais, o ecossistema local exige a orquestr
 ### 📋 Pré-requisitos Obrigatórios
 1. **Ollama:** Servidor de IA local instalado e rodando.
 2. **SQL Server:** Instância ativa de banco de dados relacional.
-3. **Auth0 Account:** Um Tenant/Application configurado no Auth0 para prover as chaves de validação JWT e as configurações do cliente front-end.
+3. **Auth0 Account:** Tenant/Application com Audience da API e, no ambiente atual de desenvolvimento, conexão **Google Social OAuth2** (demais conexões desativadas no dashboard do Auth0).
 
 ---
 
@@ -64,30 +76,44 @@ Diferente de aplicações web tradicionais, o ecossistema local exige a orquestr
 #### 1. Preparando o Cérebro de IA (Ollama)
 Com o Ollama ativo em segundo plano na porta padrão 11434, baixe o modelo homologado executando o comando a seguir no terminal:
 
+```bash
 ollama run qwen2.5:14b
+```
 
-(Nota de Hardware: O modelo exige cerca de 9.2 GB em disco. Em máquinas com GPUs de 6GB VRAM como a GTX 1060, o Ollama fará o transbordo automático de parte dos parâmetros para a memória RAM de 32GB, gerando uma taxa estável porém contida de tokens por segundo devido ao limite do barramento).
+*(Nota de Hardware: O modelo exige cerca de 9.2 GB em disco. Em máquinas com GPUs de VRAM contida, o Ollama fará o transbordo automático de parte dos parâmetros para a memória RAM física, dividindo a carga de processamento).*
 
 #### 2. Configurando as Variáveis e Executando a API (.NET)
 1. Certifique-se de que as chaves do seu provedor Auth0 e a string de conexão do seu SQL Server estejam devidamente preenchidas no arquivo `appsettings.Development.json` na pasta `CareerEngineering.Api`.
 2. Abra o terminal na raiz do projeto da API e aplique as migrações do Entity Framework para estruturar o banco de dados:
+   ```bash
    dotnet ef database update
+   ```
 3. Execute o servidor de backend:
+   ```bash
    dotnet run
+   ```
+
 #### 3. Inicializando o Painel Cliente (Angular)
-1. Navegue até o diretório do cliente: cd CareerEngineering.Client
-2. Instale os pacotes de dependências do ecossistema:
+1. Navegue até o diretório do cliente:
+   ```bash
+   cd CareerEngineering.Client
+   ```
+2. Instale as dependências:
+   ```bash
    npm install
-3. Inicie o servidor de desenvolvimento do Angular com Hot Reload:
+   ```
+3. Inicie o servidor de desenvolvimento com Hot Reload:
+   ```bash
    ng serve
-4. Acesse o sistema através do endereço local padrão: http://localhost:4200
+   ```
+4. Acesse: http://localhost:4200
 
 ---
 
 ## 👤 Autor
 
 Desenvolvido por **Rodrigo Ribeiro**.  
-Especialista em unir arquitetura robusta no backend com interfaces dinâmicas no frontend. Se você quer conversar sobre integração de IA em sistemas reais, Engenharia de Prompts ou desenvolvimento Full Stack, conecte-se comigo:
+Software Developer especialista em construir arquiteturas robustas e escaláveis no backend integradas a interfaces modernas, limpas e altamente reativas no frontend.
 
 * **LinkedIn:** [Acessar meu Perfil Profissional](https://linkedin.com/in/rodrigo-ribeiro-developer)
 * **E-mail:** rodrigong@gmail.com
