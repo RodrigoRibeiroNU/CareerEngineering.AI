@@ -38,6 +38,12 @@ O sistema está estruturado em uma arquitetura desacoplada e robusta, suportando
   * `SidebarComponent`: histórico cronológico com exclusão rápida e renomeação inline com update otimista.
 * **Responsividade:** A Sidebar vira gaveteiro flutuante (overlay drawer) em telas menores (`md` para baixo), sem comprimir a área do chat.
 * **Alternação Form vs Chat:** Painel central alterna entre formulário de preenchimento (`max-w-5xl`, alinhado à Landing) e janela de chat com streaming em tempo real.
+* **Parser Client-Side de Documentos (Fase 6):** Extração de texto de `.pdf`, `.docx` e `.txt` no navegador via `DocumentParserService` (`pdfjs-dist` + `mammoth`), sem upload para o backend.
+  * Componente `DocumentFieldComponent` nos cards **Descrição da Vaga** e **Seu Currículo**.
+  * Barra de ferramentas: badge do arquivo importado → Colar → Importar (clipe) → Copiar → Limpar (lixeira).
+  * Drag & drop com highlight visual, spinner durante a extração e toasts de erro/sucesso (`ToastService`).
+  * Worker do PDF.js servido em `public/assets/pdf.worker.min.mjs`.
+* **Atalhos do Chat Conversacional:** No textarea de follow-up, `Enter` envia a mensagem; `Ctrl+Enter` / `Shift+Enter` inserem nova linha. Dica de UX exibida abaixo do input.
 * **Edição Contínua:** Reedição de vaga/currículo via `UpdateAnalysis`, registrando a transição como evento no chat sem limpar o histórico.
 * **Segurança Baseada em Provedor:** Landing pública e rotas protegidas (`/analise` e `/analise/:id`) com `AuthGuard` Auth0. Interceptor HTTP injeta JWT nas requisições REST (`/api/*`); o SignalR usa `accessTokenFactory` na conexão do hub.
 
@@ -53,7 +59,8 @@ O projeto encontra-se em estágio avançado de maturidade de sua fundação crí
 - [x] **Pipeline de Análise Inteligente:** Mecanismo *Generator-Refiner* em C#, timeout de hardware, saída rápida para dados divergentes e guilhotina sintática de strings.
 - [x] **Leitura e Gestão de Históricos (Fase 4):** Persistência no SQL Server exposta via API REST e listada dinamicamente na sidebar.
 - [x] **Expansão Conversacional Multi-turno (Fase 5):** Chat contínuo com histórico estruturado, sliding window e guardrails de personagem no prompt.
-- [ ] **Fase 6 (Parser Físico de Documentos):** Upload e extração de texto de `.pdf`, `.docx` ou `.txt` via parser no client-side.
+- [x] **Fase 6 (Parser Físico de Documentos):** Extração client-side de `.pdf` / `.docx` / `.txt` (`DocumentParserService`), toolbar de importação/copiar/colar/limpar, drag & drop e feedback por toast.
+- [x] **Atalhos de Teclado no Chat:** `Enter` para enviar; `Ctrl+Enter` / `Shift+Enter` para quebra de linha.
 - [ ] **Fase 7 (Renderização Rica):** Parser Markdown no Angular para renderizar as seções do Refinador, substituindo `whitespace-pre-wrap`.
 - [ ] **Fase 8 (Configurações de Produção):** Desacoplar URLs localhost com `environment.ts` no Angular e variáveis de ambiente no .NET.
 - [ ] **Faxina de Código Depreciado:** Remoção do serviço obsoleto `CareerMentorService` e do componente órfão `AnalysisResultComponent`.
