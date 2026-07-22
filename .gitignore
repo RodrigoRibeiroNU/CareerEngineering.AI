@@ -11,3 +11,4 @@ dist/
 # Geral
 .env
 *.log
+artifacts/

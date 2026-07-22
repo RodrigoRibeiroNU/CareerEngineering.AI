@@ -84,7 +84,6 @@ builder.Services.AddSingleton<Kernel>(sp =>
 });
 
 builder.Services.AddScoped<IAnaliseService, AnaliseService>();
-builder.Services.AddScoped<ICareerMentorService, CareerMentorService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));

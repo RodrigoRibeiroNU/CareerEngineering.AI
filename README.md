@@ -64,7 +64,7 @@ O projeto encontra-se em estágio avançado de maturidade de sua fundação crí
 - [x] **Atalhos de Teclado no Chat:** `Enter` para enviar; `Ctrl+Enter` / `Shift+Enter` para quebra de linha.
 - [x] **Fase 7 (Renderização Rica):** Parser Markdown (`ngx-markdown` + `marked`) no chat do Dashboard para renderizar as seções do Refinador e respostas do assistente, com tipografia alinhada ao tema escuro e atualização reativa no streaming SignalR.
 - [x] **Fase 8 (Configurações de Produção):** Environments Angular (`apiUrl` / `hubUrl` / Auth0) com `fileReplacements`; backend com `Cors:AllowedOrigins`, `Ollama:*` e `ConnectionStrings` sobrescrevíveis via `appsettings.*.json` ou variáveis de ambiente.
-- [ ] **Faxina de Código Depreciado:** Remoção do serviço obsoleto `CareerMentorService` e do componente órfão `AnalysisResultComponent`.
+- [x] **Faxina de Código Depreciado:** Remoção do serviço obsoleto `CareerMentorService` e do componente órfão `AnalysisResultComponent`.
 
 ---
 

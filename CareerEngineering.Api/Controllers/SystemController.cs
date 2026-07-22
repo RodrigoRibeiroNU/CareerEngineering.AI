@@ -7,7 +7,7 @@ namespace CareerEngineering.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] 
+[Authorize]
 public class SystemController : ControllerBase
 {
     private readonly Kernel _kernel;
@@ -23,8 +23,8 @@ public class SystemController : ControllerBase
         try
         {
             var chatService = _kernel.GetRequiredService<IChatCompletionService>();
-            
-            string modeloAtivo = chatService.Attributes.ContainsKey("ModelId") 
+
+            string modeloAtivo = chatService.Attributes.ContainsKey("ModelId")
                 ? chatService.Attributes["ModelId"]?.ToString() ?? "Qwen 2.5 14B"
                 : "Qwen 2.5 14B";
 
