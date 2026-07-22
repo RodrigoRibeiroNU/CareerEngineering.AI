@@ -9,7 +9,6 @@ export class AnalisesService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/analises`;
 
-  /** Lista reativa da Sidebar. */
   readonly analises = signal<AnaliseListItem[]>([]);
   readonly loadingList = signal(false);
   readonly loadingDetail = signal(false);
@@ -74,7 +73,6 @@ export class AnalisesService {
     }
   }
 
-  /** Insere/atualiza item na Sidebar após AnalysisStarted. */
   upsertLocal(item: AnaliseListItem): void {
     this.analises.update((list) => {
       const exists = list.some((a) => a.id === item.id);

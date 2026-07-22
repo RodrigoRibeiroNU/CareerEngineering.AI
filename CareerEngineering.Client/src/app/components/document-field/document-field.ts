@@ -29,7 +29,6 @@ export class DocumentFieldComponent {
   readonly label = input.required<string>();
   readonly placeholder = input('');
 
-  /** Texto do textarea (two-way). */
   readonly text = model.required<string>();
 
   private readonly parser = inject(DocumentParserService);
@@ -137,8 +136,7 @@ export class DocumentFieldComponent {
     this.fileName.set(null);
   }
 
-  /** Remove apenas o indicador do arquivo importado (mantém o texto). */
-  protected clearFileSelection(): void {
+  protected clearImportedFileIndicator(): void {
     this.fileName.set(null);
   }
 

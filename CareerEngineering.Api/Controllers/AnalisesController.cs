@@ -45,7 +45,7 @@ public class AnalisesController : ControllerBase
         return Ok(detalhe);
     }
 
-    /// <summary>Renomeia o título da análise (otimismo visual no front).</summary>
+    /// <summary>Renomeia o título da análise.</summary>
     [HttpPatch("{id:guid}/title")]
     public async Task<IActionResult> AtualizarTitulo(Guid id, [FromBody] UpdateTituloDto dto)
     {

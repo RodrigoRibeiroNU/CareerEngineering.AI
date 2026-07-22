@@ -43,7 +43,7 @@ export class DashboardComponent implements OnInit {
   private lastHandledStartedId: string | null = null;
   private lastHandledUpdatedId: string | null = null;
   private lastHandledComplete = 0;
-  private loadingDetailId: string | null = null;
+  private detailFetchInFlightId: string | null = null;
   /** Evita disparar RegenerateAnalysis em paralelo para o mesmo id. */
   private readonly regeneratingIds = new Set<string>();
   /** Uma tentativa de regeneração por análise nesta sessão (evita loop). */
@@ -67,7 +67,6 @@ export class DashboardComponent implements OnInit {
   protected readonly activeAnaliseId = signal<string | null>(null);
   protected readonly activeTitulo = signal<string | null>(null);
   protected readonly messages = signal<ChatMessageView[]>([]);
-  /** Id da análise em edição no formulário (null = modo criação). */
   protected readonly editingAnaliseId = signal<string | null>(null);
 
   protected readonly streamPreview = computed(() => this.signalRService.streamMessage());
@@ -125,7 +124,6 @@ export class DashboardComponent implements OnInit {
       });
     });
 
-    // Streaming → bubble do assistente.
     effect(() => {
       const chunk = this.streamPreview();
       const id = this.activeAnaliseId();
@@ -173,14 +171,12 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /** Botão "+" da sidebar: limpa o chat e abre o formulário de nova análise. */
   protected startNewAnalysis(): void {
     this.resetToNewAnalysisForm();
     this.closeSidebarOnMobile();
     void this.router.navigateByUrl('/analise');
   }
 
-  /** Menu "Editar": abre o formulário preenchido com vaga/currículo da análise. */
   protected async onEditAnalysis(id: string): Promise<void> {
     this.closeSidebarOnMobile();
     this.suppressFormReset = true;
@@ -192,7 +188,7 @@ export class DashboardComponent implements OnInit {
     }
 
     this.loading.set(false);
-    this.loadingDetailId = null;
+    this.detailFetchInFlightId = null;
     this.lastHandledStartedId = null;
     this.activeAnaliseId.set(null);
     this.messages.set([]);
@@ -210,7 +206,7 @@ export class DashboardComponent implements OnInit {
 
   private resetToNewAnalysisForm(): void {
     this.loading.set(false);
-    this.loadingDetailId = null;
+    this.detailFetchInFlightId = null;
     this.lastHandledStartedId = null;
     this.lastHandledUpdatedId = null;
     this.activeAnaliseId.set(null);
@@ -224,25 +220,21 @@ export class DashboardComponent implements OnInit {
   }
 
   private async onRouteIdChange(id: string | null): Promise<void> {
-    // Rota /analise (sem id) → formulário de nova análise ou edição.
     if (!id) {
       // Evita limpar no meio do StartAnalysis: AnalysisStarted ainda não navegou para /:id.
       if (this.loading() && !this.activeAnaliseId()) return;
-      // Modo edição: mantém textareas populados.
       if (this.suppressFormReset || this.editingAnaliseId()) return;
 
       this.resetToNewAnalysisForm();
       return;
     }
 
-    // Já estamos nesta análise (streaming ou carregada).
     if (id === this.activeAnaliseId() && (this.loading() || this.messages().length > 0)) {
       return;
     }
 
-    // Evita GET duplicado.
-    if (this.loadingDetailId === id) return;
-    this.loadingDetailId = id;
+    if (this.detailFetchInFlightId === id) return;
+    this.detailFetchInFlightId = id;
 
     this.editingAnaliseId.set(null);
     this.activeAnaliseId.set(id);
@@ -272,8 +264,8 @@ export class DashboardComponent implements OnInit {
         await this.tryRegenerateIfEmpty(detail);
       }
     } finally {
-      if (this.loadingDetailId === id) {
-        this.loadingDetailId = null;
+      if (this.detailFetchInFlightId === id) {
+        this.detailFetchInFlightId = null;
       }
     }
   }
@@ -385,7 +377,6 @@ export class DashboardComponent implements OnInit {
     this.signalRService.clearStream();
     this.lastHandledUpdatedId = null;
 
-    // Carrega histórico existente antes de sair do formulário.
     const detail = await this.analisesService.getById(analiseId);
     const historico = detail ? this.mapChatMessages(detail) : [];
 
@@ -417,9 +408,6 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  /**
-   * Enter envia a mensagem; Ctrl+Enter / Shift+Enter inserem nova linha.
-   */
   protected onEnterPressed(event: Event): void {
     const keyboardEvent = event as KeyboardEvent;
 

@@ -142,7 +142,6 @@ public class CareerChatHub : Hub
                 return;
             }
 
-            // Ponte de contexto na linha do tempo — histórico anterior permanece intacto.
             await _analiseService.AdicionarMensagemAsync(analise.Id, "system", AvisoAtualizacaoDados.Trim());
 
             await Clients.Caller.SendAsync("AnalysisUpdated", analise.Id.ToString(), analise.Titulo);
@@ -345,7 +344,6 @@ public class CareerChatHub : Hub
 
             var pergunta = texto.Trim();
 
-            // Auditoria preventiva: tenta de jailbreak / fora de escopo (heurística + log).
             if (PareceTentativaQuebraEscopo(pergunta))
             {
                 _logger.LogWarning(
@@ -568,10 +566,8 @@ public class CareerChatHub : Hub
         string textoCurriculo,
         IReadOnlyList<MensagemHistorico> mensagens)
     {
-        // 1) Âncora de personagem inviolável (sempre no início).
         var historico = new ChatHistory(SystemPromptGuardrails);
 
-        // 2) Âncoras de contexto de negócio — fixas a cada turno, fora da cota da janela.
         historico.AddSystemMessage(
             $"""
             CONTEXTO ÂNCORA (não ignore; base exclusiva da mentoria):
@@ -582,8 +578,6 @@ public class CareerChatHub : Hub
             {textoCurriculo}
             """);
 
-        // 3) Sliding window: só as N últimas mensagens (mais antigas ficam só no banco).
-        //    Mensagens "system" (ex.: aviso de atualização de vaga/currículo) entram como ponte de contexto.
         foreach (var msg in mensagens)
         {
             switch (msg.Role.ToLowerInvariant())
@@ -668,7 +662,6 @@ public class CareerChatHub : Hub
         Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
         ?? Context.User?.FindFirst("sub")?.Value;
 
-    /// <summary>Título temporário inferido a partir do início da descrição da vaga.</summary>
     private static string InferirTitulo(string vaga)
     {
         if (string.IsNullOrWhiteSpace(vaga)) return "Nova análise";

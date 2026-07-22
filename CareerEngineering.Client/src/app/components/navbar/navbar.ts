@@ -13,9 +13,7 @@ export class NavbarComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly systemService = inject(SystemService);
 
-  /** Subtítulo da sessão/vaga ativa (opcional). */
   readonly activeTitulo = input<string | null>(null);
-  /** Alterna a visibilidade da sidebar de histórico. */
   readonly toggleSidebar = output<void>();
 
   protected readonly user = toSignal(this.auth.user$, { initialValue: null });

@@ -13,7 +13,6 @@ export interface MensagemHistorico {
   dataEnvio: string;
 }
 
-/** Detalhe completo para reabrir um chat. */
 export interface AnaliseDetail {
   id: string;
   titulo: string;

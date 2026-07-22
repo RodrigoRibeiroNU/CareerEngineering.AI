@@ -26,7 +26,6 @@ export class DocumentParserService {
 
   private workerConfigured = false;
 
-  /** Extrai texto limpo a partir de um arquivo PDF, DOCX ou TXT. */
   async extractText(file: File): Promise<string> {
     const extension = this.getExtension(file.name);
 
@@ -127,7 +126,6 @@ export class DocumentParserService {
     return text;
   }
 
-  /** Normaliza quebras de linha e espaços excessivos. */
   private cleanText(text: string): string {
     return text
       .replace(/\r\n/g, '\n')

@@ -24,14 +24,10 @@ import { AnaliseListItem } from '../../models/analise.models';
 export class SidebarComponent {
   private readonly analisesService = inject(AnalisesService);
 
-  /** Controla se o painel está oculto (drawer mobile / colapso desktop). */
   readonly collapsed = input(false);
   readonly deleted = output<string>();
-  /** Solicita ao Dashboard resetar o formulário de nova análise. */
   readonly newAnalysis = output<void>();
-  /** Solicita abrir o formulário em modo edição com os dados da análise. */
   readonly editAnalysis = output<string>();
-  /** Emite ao selecionar um item — útil para fechar o drawer no mobile. */
   readonly navigated = output<void>();
 
   protected readonly analises = this.analisesService.analises;

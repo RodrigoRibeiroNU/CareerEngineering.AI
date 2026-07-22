@@ -11,7 +11,6 @@ public class Analise
     public string UsuarioId { get; set; } = string.Empty;
     public Usuario? Usuario { get; set; }
 
-    /// <summary>Título exibido na Sidebar (editável pelo usuário).</summary>
     public string Titulo { get; set; } = string.Empty;
 
     /// <summary>Texto completo da vaga — âncora de contexto do sistema.</summary>
@@ -20,7 +19,6 @@ public class Analise
     /// <summary>Texto completo do currículo — âncora de contexto do sistema.</summary>
     public string TextoCurriculo { get; set; } = string.Empty;
 
-    /// <summary>Identificador do modelo LLM usado na análise inicial.</summary>
     public string ModeloLLM { get; set; } = string.Empty;
 
     public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
