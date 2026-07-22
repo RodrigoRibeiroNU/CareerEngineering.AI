@@ -4,6 +4,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authHttpInterceptorFn, provideAuth0 } from '@auth0/auth0-angular';
 import { provideMarkdown } from 'ngx-markdown';
 import { routes } from './app.routes';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,15 +13,15 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideMarkdown(),
     provideAuth0({
-      domain: 'dev-41nhlxtdpvk10ged.us.auth0.com',
-      clientId: 'E6M23rVZb8kKlt3GwHjaDB6bOB3pa0O5',
+      domain: environment.auth0.domain,
+      clientId: environment.auth0.clientId,
       authorizationParams: {
         redirect_uri: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4200',
-        audience: 'https://careerengineering-api.com',
+        audience: environment.auth0.audience,
         scope: 'openid profile email',
       },
       httpInterceptor: {
-        allowedList: ['http://localhost:5019/api/*'],
+        allowedList: [`${environment.apiUrl}/*`],
       },
     }),
   ],

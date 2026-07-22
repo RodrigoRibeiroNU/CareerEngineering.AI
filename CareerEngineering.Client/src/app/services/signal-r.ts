@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { AuthService } from '@auth0/auth0-angular';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class SignalRService {
@@ -106,7 +107,7 @@ export class SignalRService {
 
     if (!this.hubConnection) {
       this.hubConnection = new signalR.HubConnectionBuilder()
-        .withUrl('http://localhost:5019/careerChatHub', {
+        .withUrl(environment.hubUrl, {
           accessTokenFactory: () => firstValueFrom(this.auth.getAccessTokenSilently()),
         })
         .withAutomaticReconnect()

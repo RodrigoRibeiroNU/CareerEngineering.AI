@@ -46,6 +46,7 @@ O sistema está estruturado em uma arquitetura desacoplada e robusta, suportando
 * **Atalhos do Chat Conversacional:** No textarea de follow-up, `Enter` envia a mensagem; `Ctrl+Enter` / `Shift+Enter` inserem nova linha. Dica de UX exibida abaixo do input.
 * **Edição Contínua:** Reedição de vaga/currículo via `UpdateAnalysis`, registrando a transição como evento no chat sem limpar o histórico.
 * **Segurança Baseada em Provedor:** Landing pública e rotas protegidas (`/analise` e `/analise/:id`) com `AuthGuard` Auth0. Interceptor HTTP injeta JWT nas requisições REST (`/api/*`); o SignalR usa `accessTokenFactory` na conexão do hub.
+* **Configuração por Ambiente (Fase 8):** Frontend consome `environment.ts` / `environment.development.ts` (`apiUrl`, `hubUrl`, Auth0). Backend lê `Cors:AllowedOrigins` (REST + SignalR com `AllowCredentials`), `Ollama:*` e `ConnectionStrings` via appsettings ou variáveis de ambiente.
 
 ---
 
@@ -62,7 +63,7 @@ O projeto encontra-se em estágio avançado de maturidade de sua fundação crí
 - [x] **Fase 6 (Parser Físico de Documentos):** Extração client-side de `.pdf` / `.docx` / `.txt` (`DocumentParserService`), toolbar de importação/copiar/colar/limpar, drag & drop e feedback por toast.
 - [x] **Atalhos de Teclado no Chat:** `Enter` para enviar; `Ctrl+Enter` / `Shift+Enter` para quebra de linha.
 - [x] **Fase 7 (Renderização Rica):** Parser Markdown (`ngx-markdown` + `marked`) no chat do Dashboard para renderizar as seções do Refinador e respostas do assistente, com tipografia alinhada ao tema escuro e atualização reativa no streaming SignalR.
-- [ ] **Fase 8 (Configurações de Produção):** Desacoplar URLs localhost com `environment.ts` no Angular e variáveis de ambiente no .NET.
+- [x] **Fase 8 (Configurações de Produção):** Environments Angular (`apiUrl` / `hubUrl` / Auth0) com `fileReplacements`; backend com `Cors:AllowedOrigins`, `Ollama:*` e `ConnectionStrings` sobrescrevíveis via `appsettings.*.json` ou variáveis de ambiente.
 - [ ] **Faxina de Código Depreciado:** Remoção do serviço obsoleto `CareerMentorService` e do componente órfão `AnalysisResultComponent`.
 
 ---
@@ -90,7 +91,7 @@ ollama run qwen2.5:14b
 *(Nota de Hardware: O modelo exige cerca de 9.2 GB em disco. Em máquinas com GPUs de VRAM contida, o Ollama fará o transbordo automático de parte dos parâmetros para a memória RAM física, dividindo a carga de processamento).*
 
 #### 2. Configurando as Variáveis e Executando a API (.NET)
-1. Certifique-se de que as chaves do seu provedor Auth0 e a string de conexão do seu SQL Server estejam devidamente preenchidas no arquivo `appsettings.Development.json` na pasta `CareerEngineering.Api`.
+1. Em desenvolvimento, preencha `CareerEngineering.Api/appsettings.Development.json` (`Auth0`, `Cors:AllowedOrigins`, `ConnectionStrings:DefaultConnection`, `Ollama`). Em produção, use `appsettings.Production.json` ou variáveis de ambiente (ex.: `ConnectionStrings__DefaultConnection`, `Cors__AllowedOrigins__0`, `Ollama__Endpoint`, `Auth0__Domain`, `Auth0__Audience`).
 2. Abra o terminal na raiz do projeto da API e aplique as migrações do Entity Framework para estruturar o banco de dados:
    ```bash
    dotnet ef database update
@@ -105,15 +106,16 @@ ollama run qwen2.5:14b
    ```bash
    cd CareerEngineering.Client
    ```
-2. Instale as dependências:
+2. Em desenvolvimento, `ng serve` aplica `environment.development.ts` (localhost:5019 + Auth0 de dev) via `fileReplacements`. Para produção, preencha `src/environments/environment.ts` e rode `ng build --configuration=production`.
+3. Instale as dependências:
    ```bash
    npm install
    ```
-3. Inicie o servidor de desenvolvimento com Hot Reload:
+4. Inicie o servidor de desenvolvimento com Hot Reload:
    ```bash
    ng serve
    ```
-4. Acesse: http://localhost:4200
+5. Acesse: http://localhost:4200
 
 ---
 

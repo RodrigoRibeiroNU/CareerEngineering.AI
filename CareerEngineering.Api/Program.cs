@@ -10,8 +10,32 @@ using CareerEngineering.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var auth0Domain = builder.Configuration["Auth0:Domain"]!;
-var auth0Audience = builder.Configuration["Auth0:Audience"]!;
+var auth0Domain = builder.Configuration["Auth0:Domain"]
+    ?? throw new InvalidOperationException("Auth0:Domain não configurado.");
+var auth0Audience = builder.Configuration["Auth0:Audience"]
+    ?? throw new InvalidOperationException("Auth0:Audience não configurado.");
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? [];
+if (allowedOrigins.Length == 0)
+{
+    throw new InvalidOperationException(
+        "Cors:AllowedOrigins deve conter ao menos uma origem (appsettings ou variável Cors__AllowedOrigins__0).");
+}
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection não configurada (appsettings ou ConnectionStrings__DefaultConnection).");
+}
+
+var ollamaEndpoint = builder.Configuration["Ollama:Endpoint"]
+    ?? "http://localhost:11434/v1";
+var ollamaModelId = builder.Configuration["Ollama:ModelId"]
+    ?? "qwen2.5:14b";
+var ollamaApiKey = builder.Configuration["Ollama:ApiKey"]
+    ?? "ollama";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -42,7 +66,7 @@ builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials());
@@ -52,9 +76,9 @@ builder.Services.AddSingleton<Kernel>(sp =>
 {
     var kernelBuilder = Kernel.CreateBuilder();
     kernelBuilder.AddOpenAIChatCompletion(
-        modelId: "qwen2.5:14b",
-        apiKey: "ignore",
-        endpoint: new Uri("http://localhost:11434/v1")
+        modelId: ollamaModelId,
+        apiKey: ollamaApiKey,
+        endpoint: new Uri(ollamaEndpoint)
     );
     return kernelBuilder.Build();
 });
@@ -63,10 +87,11 @@ builder.Services.AddScoped<IAnaliseService, AnaliseService>();
 builder.Services.AddScoped<ICareerMentorService, CareerMentorService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
 var app = builder.Build();
 
+// CORS antes de auth: cobre REST e WebSockets do SignalR com AllowCredentials.
 app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();

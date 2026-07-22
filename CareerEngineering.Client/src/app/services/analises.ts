@@ -1,12 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { AnaliseDetail, AnaliseListItem } from '../models/analise.models';
 
 @Injectable({ providedIn: 'root' })
 export class AnalisesService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5019/api/analises';
+  private readonly apiUrl = `${environment.apiUrl}/analises`;
 
   /** Lista reativa da Sidebar. */
   readonly analises = signal<AnaliseListItem[]>([]);
